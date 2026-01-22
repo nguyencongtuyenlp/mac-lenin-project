@@ -4,15 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Timeline - Hand Gesture Control</title>
-
-    <!-- Three.js & MediaPipe -->
+    <title>Dự án Mac-Lenin - Interactive Timeline</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
-        crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
     <style>
         * {
             margin: 0;
@@ -22,8 +17,8 @@
 
         body {
             overflow: hidden;
-            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0a0a2a 100%);
-            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a0a0a 0%, #2d1a1a 50%, #1a0a1a 100%);
+            font-family: 'Segoe UI', Arial, sans-serif;
             color: white;
         }
 
@@ -35,14 +30,13 @@
             left: 0;
         }
 
-        /* UI Header */
         #header {
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             padding: 20px 30px;
-            background: linear-gradient(180deg, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -50,42 +44,69 @@
         }
 
         #title {
-            font-size: 24px;
-            font-weight: 300;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            background: linear-gradient(90deg, #FFD700, #FF6B6B, #4ECDC4);
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, #FF4444, #FFD700);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
 
-        /* Camera Preview */
         #camera-preview {
-            width: 200px;
-            height: 150px;
-            border: 2px solid rgba(255, 215, 0, 0.5);
-            border-radius: 12px;
+            width: 180px;
+            height: 135px;
+            border: 2px solid rgba(255, 68, 68, 0.5);
+            border-radius: 10px;
             transform: scaleX(-1);
-            opacity: 0.9;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2), inset 0 0 20px rgba(0, 0, 0, 0.5);
             background: rgba(0, 0, 0, 0.3);
         }
 
-        /* Bottom Controls */
+        #btnStart {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #D32F2F, #8B0000);
+            color: white;
+            border: 2px solid #FFD700;
+            padding: 20px 50px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 40px rgba(211, 47, 47, 0.4);
+            z-index: 200;
+        }
+
+        #btnStart:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+
+        #status {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-size: 14px;
+            color: #FF6B6B;
+            z-index: 100;
+        }
+
         #controls {
             position: absolute;
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 30px;
+            gap: 25px;
             z-index: 100;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.5);
             padding: 15px 30px;
             border-radius: 50px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 68, 68, 0.3);
         }
 
         .gesture-hint {
@@ -100,66 +121,22 @@
             font-size: 20px;
         }
 
-        /* Start Button */
-        #btnStart {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 20px 60px;
-            font-size: 18px;
-            font-weight: 600;
-            letter-spacing: 2px;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
-            transition: all 0.3s ease;
-            z-index: 200;
-        }
-
-        #btnStart:hover {
-            transform: translate(-50%, -50%) scale(1.05);
-            box-shadow: 0 15px 50px rgba(102, 126, 234, 0.6);
-        }
-
-        /* Status Display */
-        #status {
-            position: absolute;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.6);
-            padding: 10px 25px;
-            border-radius: 25px;
-            font-size: 14px;
-            color: #4ECDC4;
-            z-index: 100;
-            backdrop-filter: blur(5px);
-        }
-
-        /* Node Info Panel */
         #node-info {
             position: absolute;
             top: 100px;
             left: 30px;
-            background: rgba(20, 20, 40, 0.9);
+            background: rgba(30, 10, 10, 0.9);
             padding: 20px 25px;
             border-radius: 15px;
-            min-width: 250px;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            min-width: 280px;
+            border: 1px solid rgba(255, 68, 68, 0.4);
             z-index: 100;
             display: none;
-            backdrop-filter: blur(10px);
         }
 
         #node-info h3 {
-            color: #FFD700;
+            color: #FF6B6B;
             margin-bottom: 10px;
-            font-weight: 400;
         }
 
         #node-info p {
@@ -168,22 +145,6 @@
             line-height: 1.6;
         }
 
-        /* Debug Panel */
-        #debug {
-            position: absolute;
-            top: 100px;
-            right: 30px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            font-family: monospace;
-            font-size: 11px;
-            color: #0f0;
-            border-radius: 10px;
-            z-index: 100;
-            display: none;
-        }
-
-        /* Copyright */
         #copyright {
             position: absolute;
             bottom: 10px;
@@ -197,80 +158,18 @@
             display: none;
         }
 
-        /* Virtual Cursor */
-        #virtual-cursor {
-            position: fixed;
-            width: 30px;
-            height: 30px;
-            border: 3px solid #FFD700;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 500;
-            transform: translate(-50%, -50%);
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), inset 0 0 10px rgba(255, 215, 0, 0.3);
-            transition: all 0.05s ease-out;
-            display: none;
-        }
-
-        #virtual-cursor::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 8px;
-            height: 8px;
-            background: #FFD700;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        #virtual-cursor.active {
-            border-color: #4ECDC4;
-            box-shadow: 0 0 30px rgba(78, 205, 196, 0.8);
-        }
-
-        /* Toggle Cursor Button */
-        #btn-toggle-cursor {
-            position: absolute;
-            top: 15px;
-            left: 250px;
-            background: rgba(40, 40, 60, 0.9);
-            color: white;
-            border: 1px solid rgba(255, 215, 0, 0.5);
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 13px;
-            z-index: 150;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        #btn-toggle-cursor:hover {
-            background: rgba(60, 60, 80, 0.95);
-            border-color: #FFD700;
-        }
-
-        #btn-toggle-cursor.active {
-            background: rgba(255, 215, 0, 0.2);
-            border-color: #FFD700;
-            color: #FFD700;
-        }
-
-        /* ==========================================
-           DETAIL VIEW (Drill-down into node)
-           ========================================== */
         #detail-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(10, 10, 26, 0.95);
+            background: rgba(20, 5, 5, 0.95);
             z-index: 300;
             display: none;
             opacity: 0;
             transition: opacity 0.5s ease;
+            overflow-y: auto;
         }
 
         #detail-overlay.active {
@@ -279,14 +178,8 @@
         }
 
         #detail-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 1200px;
-            max-height: 85vh;
-            overflow-y: auto;
+            max-width: 900px;
+            margin: 50px auto;
             padding: 30px;
         }
 
@@ -298,24 +191,19 @@
         }
 
         #detail-back {
-            background: rgba(255, 107, 107, 0.2);
+            background: rgba(255, 68, 68, 0.2);
             border: 2px solid #FF6B6B;
             color: #FF6B6B;
             padding: 12px 25px;
             border-radius: 30px;
             cursor: pointer;
             font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-        #detail-back:hover {
-            background: rgba(255, 107, 107, 0.4);
         }
 
         #detail-title {
-            font-size: 36px;
+            font-size: 32px;
             font-weight: 300;
-            background: linear-gradient(90deg, #FFD700, #FF6B6B);
+            background: linear-gradient(90deg, #FF6B6B, #FFD700);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -324,62 +212,37 @@
             background: rgba(255, 255, 255, 0.05);
             padding: 25px;
             border-radius: 15px;
-            margin-bottom: 30px;
-            border-left: 4px solid #4ECDC4;
+            margin-bottom: 25px;
+            border-left: 4px solid #FF6B6B;
             font-size: 16px;
             line-height: 1.8;
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.85);
         }
 
         .detail-section {
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
 
         .detail-section-title {
             font-size: 20px;
             color: #FFD700;
             margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* Video Section */
-        #detail-video {
-            width: 100%;
-            max-width: 800px;
-            aspect-ratio: 16/9;
-            border-radius: 15px;
-            border: 2px solid rgba(255, 215, 0, 0.3);
-            background: #000;
-        }
-
-        /* Events Timeline */
-        #detail-events {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
         }
 
         .event-item {
             display: flex;
             gap: 20px;
-            padding: 20px;
-            background: rgba(78, 205, 196, 0.1);
-            border-radius: 12px;
-            border-left: 3px solid #4ECDC4;
-            transition: all 0.3s ease;
-        }
-
-        .event-item:hover {
-            background: rgba(78, 205, 196, 0.2);
-            transform: translateX(10px);
+            padding: 15px;
+            background: rgba(255, 68, 68, 0.1);
+            border-radius: 10px;
+            border-left: 3px solid #FF6B6B;
+            margin-bottom: 10px;
         }
 
         .event-date {
-            color: #4ECDC4;
+            color: #FF6B6B;
             font-weight: 600;
-            min-width: 100px;
+            min-width: 80px;
         }
 
         .event-content h4 {
@@ -392,1199 +255,465 @@
             font-size: 14px;
         }
 
-        /* Sub-nodes Grid */
         #detail-subnodes {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
         }
 
         .subnode-card {
-            background: linear-gradient(135deg, rgba(40, 40, 60, 0.9), rgba(30, 30, 50, 0.9));
-            padding: 25px;
-            border-radius: 15px;
-            border: 1px solid rgba(255, 215, 0, 0.2);
+            background: linear-gradient(135deg, rgba(50, 20, 20, 0.9), rgba(30, 10, 10, 0.9));
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 68, 68, 0.3);
             cursor: pointer;
             transition: all 0.3s ease;
         }
 
         .subnode-card:hover {
-            transform: translateY(-5px);
-            border-color: #FFD700;
-            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.2);
+            transform: translateY(-3px);
+            border-color: #FF6B6B;
         }
 
         .subnode-card h4 {
             color: #FFD700;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            font-size: 14px;
         }
 
         .subnode-card p {
             color: rgba(255, 255, 255, 0.6);
-            font-size: 13px;
-        }
-
-        /* Gesture hint in detail view */
-        #detail-gesture-hint {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.6);
-            padding: 12px 30px;
-            border-radius: 30px;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 13px;
-            z-index: 350;
+            font-size: 12px;
         }
     </style>
 </head>
 
 <body>
     <div id="canvas-container"></div>
-
-    <!-- Header -->
     <div id="header">
-        <div id="title">✦ Interactive Timeline</div>
+        <div id="title">☭ Dự án Mac-Lenin</div>
         <canvas id="camera-preview"></canvas>
     </div>
-
-    <!-- Toggle Cursor Button -->
-    <button id="btn-toggle-cursor" onclick="toggleCursor()">👆 Con trỏ: Tắt</button>
-
-    <!-- Virtual Cursor -->
-    <div id="virtual-cursor"></div>
-
-    <!-- Start Button -->
-    <button id="btnStart" onclick="startSystem()">🖐 START WITH GESTURES</button>
-
-    <!-- Status -->
+    <button id="btnStart" onclick="startSystem()">🖐 BẮT ĐẦU KHÁM PHÁ</button>
     <div id="status">Đang chờ khởi động...</div>
-
-    <!-- Node Info Panel -->
     <div id="node-info">
-        <h3 id="node-title">Node Title</h3>
-        <p id="node-desc">Node description goes here</p>
+        <h3 id="node-title">Tiêu đề</h3>
+        <p id="node-desc">Mô tả</p>
     </div>
-
-    <!-- Controls Hint -->
     <div id="controls">
-        <div class="gesture-hint">
-            <span class="gesture-icon">🖐</span>
-            <span>Xòe tay: Di chuyển</span>
-        </div>
-        <div class="gesture-hint">
-            <span class="gesture-icon">✌️</span>
-            <span>Hi (2 ngón): Chọn</span>
-        </div>
-        <div class="gesture-hint">
-            <span class="gesture-icon">🤏</span>
-            <span>Pinch: Zoom/Vào</span>
-        </div>
-        <div class="gesture-hint">
-            <span class="gesture-icon">✊</span>
-            <span>Nắm đấm: Quay lại</span>
-        </div>
+        <div class="gesture-hint"><span class="gesture-icon">🖐</span><span>Xòe tay: Di chuyển</span></div>
+        <div class="gesture-hint"><span class="gesture-icon">✌️</span><span>2 ngón: Chọn</span></div>
+        <div class="gesture-hint"><span class="gesture-icon">🤏</span><span>Pinch: Zoom vào</span></div>
+        <div class="gesture-hint"><span class="gesture-icon">✊</span><span>Nắm đấm: Quay lại</span></div>
     </div>
-
-    <!-- Debug -->
-    <div id="debug"></div>
-
-    <!-- Detail View Overlay (Drill-down) -->
     <div id="detail-overlay">
         <div id="detail-container">
             <div id="detail-header">
-                <button id="detail-back" onclick="exitDetailView()">✊ Quay lại</button>
-                <h1 id="detail-title">Node Title</h1>
+                <button id="detail-back" onclick="exitDetailView()">← Quay lại</button>
+                <h1 id="detail-title">Tiêu đề Node</h1>
             </div>
-
-            <div id="detail-description">
-                Mô tả chi tiết về node này...
-            </div>
-
-            <!-- Video Section -->
-            <div class="detail-section" id="video-section" style="display: none;">
-                <h3 class="detail-section-title">🎥 Video</h3>
-                <iframe id="detail-video" src="" frameborder="0" allowfullscreen></iframe>
-            </div>
-
-            <!-- Events Timeline -->
-            <div class="detail-section" id="events-section" style="display: none;">
-                <h3 class="detail-section-title">📅 Sự kiện</h3>
+            <div id="detail-description">Mô tả chi tiết...</div>
+            <div class="detail-section" id="events-section" style="display:none;">
+                <h3 class="detail-section-title">📅 Các sự kiện</h3>
                 <div id="detail-events"></div>
             </div>
-
-            <!-- Sub-nodes -->
-            <div class="detail-section" id="subnodes-section" style="display: none;">
-                <h3 class="detail-section-title">🌿 Nhánh con</h3>
+            <div class="detail-section" id="subnodes-section" style="display:none;">
+                <h3 class="detail-section-title">📚 Các chủ đề con</h3>
                 <div id="detail-subnodes"></div>
             </div>
         </div>
-
-        <div id="detail-gesture-hint">✊ Nắm đấm để quay lại</div>
     </div>
-
-    <!-- Copyright -->
-    <div id="copyright">© Timeline Gesture by nguyencongtuyenlp</div>
-
-    <!-- Hidden Video -->
+    <div id="copyright">© Dự án Mac-Lenin by nguyencongtuyenlp</div>
     <video class="video-hidden input_video"></video>
 
     <script>
-        // ==========================================
-        // 1. CONFIGURATION
-        // ==========================================
-        const CONFIG = {
-            particleCount: 2000,
-            nodeParticleCount: 200,
-            timelineLength: 300,
-            branchSpacing: 40,
-            nodeRadius: 8,
-            zoomMin: 0.3,
-            zoomMax: 3.0
-        };
+        const CONFIG = { particleCount: 1500, nodeRadius: 10 };
 
-        // Timeline Data Structure with detailed content
         const timelineData = {
             nodes: [
                 {
-                    id: 1,
-                    label: "Khởi đầu",
-                    desc: "Điểm xuất phát của hành trình",
-                    x: -100, y: 0,
-                    children: [2, 3],
-                    color: 0xFF6B6B,
+                    id: 1, label: "Chủ nghĩa Mác-Lênin", desc: "Hệ thống lý luận khoa học về cách mạng XHCN",
+                    x: 0, y: 0, children: [2, 3, 4], color: 0xFF4444,
                     content: {
-                        description: "Đây là giai đoạn khởi đầu của hành trình. Mọi thứ bắt đầu từ một ý tưởng nhỏ, một ước mơ lớn. Giai đoạn này đặt nền móng cho tất cả những gì sẽ đến sau.",
-                        video: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+                        description: "Chủ nghĩa Mác-Lênin là hệ thống quan điểm và học thuyết khoa học do C.Mác, Ph.Ăngghen sáng lập, V.I.Lênin bảo vệ và phát triển. Đây là thế giới quan, phương pháp luận phổ biến của nhận thức khoa học và thực tiễn cách mạng.",
                         events: [
-                            { date: "01/2024", title: "Bắt đầu dự án", desc: "Lên ý tưởng và phác thảo kế hoạch ban đầu" },
-                            { date: "02/2024", title: "Nghiên cứu thị trường", desc: "Tìm hiểu nhu cầu và đối thủ cạnh tranh" }
+                            { date: "1848", title: "Tuyên ngôn Đảng Cộng sản", desc: "Văn kiện lý luận đầu tiên của chủ nghĩa Mác" },
+                            { date: "1867", title: "Bộ Tư bản ra đời", desc: "Tác phẩm kinh điển phân tích CNTB" },
+                            { date: "1917", title: "Cách mạng Tháng Mười", desc: "Cuộc cách mạng XHCN đầu tiên thành công" }
                         ],
                         subNodes: [
-                            { id: "1a", label: "Brainstorm", desc: "Thu thập và phát triển ý tưởng sáng tạo" },
-                            { id: "1b", label: "Lập kế hoạch", desc: "Xây dựng roadmap chi tiết cho dự án" }
+                            { id: "1a", label: "Triết học Mác-Lênin", desc: "Chủ nghĩa duy vật biện chứng và lịch sử" },
+                            { id: "1b", label: "Kinh tế chính trị", desc: "Học thuyết về phương thức sản xuất TBCN" },
+                            { id: "1c", label: "CNXH khoa học", desc: "Lý luận về cách mạng và xây dựng CNXH" }
                         ]
                     }
                 },
                 {
-                    id: 2,
-                    label: "Phát triển",
-                    desc: "Giai đoạn phát triển và học hỏi",
-                    x: -30, y: -50,
-                    parent: 1,
-                    children: [4],
-                    color: 0x4ECDC4,
+                    id: 2, label: "Triết học Mác-Lênin", desc: "Thế giới quan và phương pháp luận khoa học",
+                    x: -80, y: -60, parent: 1, children: [5, 6], color: 0xFFD700,
                     content: {
-                        description: "Giai đoạn phát triển là thời điểm biến ý tưởng thành hiện thực. Đây là lúc học hỏi các kỹ năng mới, xây dựng sản phẩm và liên tục cải tiến.",
-                        video: "https://www.youtube.com/embed/jNQXAC9IVRw",
+                        description: "Triết học Mác-Lênin là bộ phận lý luận nghiên cứu những quy luật chung nhất của tự nhiên, xã hội và tư duy. Gồm chủ nghĩa duy vật biện chứng và chủ nghĩa duy vật lịch sử.",
                         events: [
-                            { date: "03/2024", title: "Prototype v1", desc: "Hoàn thành phiên bản thử nghiệm đầu tiên" },
-                            { date: "04/2024", title: "User Testing", desc: "Thu thập feedback từ người dùng thử nghiệm" },
-                            { date: "05/2024", title: "Iteration", desc: "Cải tiến dựa trên phản hồi" }
+                            { date: "1845", title: "Luận cương về Feuerbach", desc: "Đánh dấu bước ngoặt tư tưởng triết học" },
+                            { date: "1908", title: "Chủ nghĩa duy vật và chủ nghĩa kinh nghiệm phê phán", desc: "Lênin phát triển nhận thức luận Mác-xít" }
                         ],
                         subNodes: [
-                            { id: "2a", label: "Coding", desc: "Viết code và xây dựng tính năng" },
-                            { id: "2b", label: "Design", desc: "Thiết kế giao diện người dùng" },
-                            { id: "2c", label: "Testing", desc: "Kiểm thử và đảm bảo chất lượng" }
+                            { id: "2a", label: "Vật chất & Ý thức", desc: "Mối quan hệ giữa vật chất và ý thức" },
+                            { id: "2b", label: "Phép biện chứng", desc: "3 quy luật và 6 cặp phạm trù" }
                         ]
                     }
                 },
                 {
-                    id: 3,
-                    label: "Thử thách",
-                    desc: "Những khó khăn cần vượt qua",
-                    x: -30, y: 50,
-                    parent: 1,
-                    children: [5],
-                    color: 0xFFE66D,
+                    id: 3, label: "Kinh tế chính trị", desc: "Học thuyết về giá trị thặng dư",
+                    x: 0, y: 80, parent: 1, children: [7], color: 0x4ECDC4,
                     content: {
-                        description: "Không có hành trình nào mà không có thử thách. Đây là giai đoạn đối mặt với những khó khăn, học cách thích nghi và tìm ra giải pháp sáng tạo.",
+                        description: "Kinh tế chính trị Mác-Lênin nghiên cứu các quan hệ sản xuất trong mối liên hệ với lực lượng sản xuất và kiến trúc thượng tầng. Học thuyết giá trị thặng dư là hòn đá tảng.",
                         events: [
-                            { date: "06/2024", title: "Bug lớn", desc: "Phát hiện và sửa lỗi nghiêm trọng trong hệ thống" },
-                            { date: "07/2024", title: "Thay đổi yêu cầu", desc: "Khách hàng thay đổi yêu cầu giữa chừng" }
+                            { date: "1867-1894", title: "Bộ Tư bản (3 quyển)", desc: "Phân tích toàn diện CNTB và quy luật vận động" }
                         ],
                         subNodes: [
-                            { id: "3a", label: "Problem Solving", desc: "Phân tích và giải quyết vấn đề" },
-                            { id: "3b", label: "Adaptation", desc: "Thích nghi với thay đổi" }
+                            { id: "3a", label: "Hàng hóa & Tiền tệ", desc: "Lý luận về hàng hóa, giá trị, tiền tệ" },
+                            { id: "3b", label: "Giá trị thặng dư", desc: "Bản chất bóc lột của CNTB" },
+                            { id: "3c", label: "Tích lũy tư bản", desc: "Quy luật tích lũy và khủng hoảng" }
                         ]
                     }
                 },
                 {
-                    id: 4,
-                    label: "Kiến thức",
-                    desc: "Tích lũy kiến thức và kỹ năng",
-                    x: 40, y: -80,
-                    parent: 2,
-                    children: [],
-                    color: 0x95E1D3,
+                    id: 4, label: "CNXH Khoa học", desc: "Lý luận về cách mạng và xây dựng CNXH",
+                    x: 80, y: -60, parent: 1, children: [8], color: 0x95E1D3,
                     content: {
-                        description: "Kiến thức là tài sản quý giá nhất. Giai đoạn này tập trung vào việc học hỏi liên tục, nâng cao chuyên môn và mở rộng hiểu biết.",
-                        video: "https://www.youtube.com/embed/9bZkp7q19f0",
+                        description: "Chủ nghĩa xã hội khoa học nghiên cứu những quy luật chính trị-xã hội của quá trình phát sinh, hình thành và phát triển hình thái kinh tế-xã hội cộng sản chủ nghĩa.",
                         events: [
-                            { date: "08/2024", title: "Khóa học mới", desc: "Hoàn thành khóa học nâng cao" },
-                            { date: "09/2024", title: "Chứng chỉ", desc: "Đạt được chứng chỉ chuyên môn" }
+                            { date: "1917", title: "Nhà nước và Cách mạng", desc: "Lênin phát triển lý luận về nhà nước vô sản" },
+                            { date: "1930", title: "Đảng CSVN ra đời", desc: "Áp dụng CNXH khoa học vào Việt Nam" }
                         ],
                         subNodes: [
-                            { id: "4a", label: "Self-learning", desc: "Tự học qua sách và online" },
-                            { id: "4b", label: "Mentorship", desc: "Học hỏi từ người có kinh nghiệm" }
+                            { id: "4a", label: "Sứ mệnh giai cấp CN", desc: "Vai trò lịch sử của giai cấp công nhân" },
+                            { id: "4b", label: "Cách mạng XHCN", desc: "Con đường và phương pháp cách mạng" },
+                            { id: "4c", label: "Thời kỳ quá độ", desc: "Xây dựng CNXH từ nước tiền TBCN" }
                         ]
                     }
                 },
                 {
-                    id: 5,
-                    label: "Kinh nghiệm",
-                    desc: "Rút ra bài học từ thử thách",
-                    x: 40, y: 80,
-                    parent: 3,
-                    children: [],
-                    color: 0xF38181,
+                    id: 5, label: "Duy vật biện chứng", desc: "Quan điểm duy vật về thế giới",
+                    x: -120, y: -100, parent: 2, children: [], color: 0xF38181,
                     content: {
-                        description: "Kinh nghiệm đến từ việc thực hành và học hỏi từ những sai lầm. Mỗi thử thách vượt qua đều để lại những bài học quý giá.",
-                        events: [
-                            { date: "10/2024", title: "Bài học quan trọng", desc: "Nhận ra tầm quan trọng của việc lập kế hoạch" },
-                            { date: "11/2024", title: "Chia sẻ kinh nghiệm", desc: "Viết blog chia sẻ với cộng đồng" }
-                        ],
+                        description: "Chủ nghĩa duy vật biện chứng là sự thống nhất giữa chủ nghĩa duy vật và phép biện chứng, cung cấp thế giới quan và phương pháp luận khoa học.",
                         subNodes: [
-                            { id: "5a", label: "Reflection", desc: "Suy ngẫm về những gì đã làm" },
-                            { id: "5b", label: "Documentation", desc: "Ghi chép lại bài học" }
+                            { id: "5a", label: "Quy luật mâu thuẫn", desc: "Nguồn gốc của sự vận động phát triển" },
+                            { id: "5b", label: "Lượng - Chất", desc: "Phương thức vận động phát triển" },
+                            { id: "5c", label: "Phủ định của phủ định", desc: "Khuynh hướng của sự phát triển" }
                         ]
                     }
                 },
                 {
-                    id: 6,
-                    label: "Đích đến",
-                    desc: "Mục tiêu cuối cùng đạt được",
-                    x: 100, y: 0,
-                    children: [],
-                    color: 0xAA96DA,
+                    id: 6, label: "Duy vật lịch sử", desc: "Quan điểm duy vật về xã hội",
+                    x: -40, y: -120, parent: 2, children: [], color: 0xAA96DA,
                     content: {
-                        description: "Đích đến không phải là kết thúc, mà là một khởi đầu mới. Đây là lúc nhìn lại hành trình, ăn mừng thành công và đặt ra những mục tiêu mới cao hơn.",
-                        video: "https://www.youtube.com/embed/ZbZSe6N_BXs",
-                        events: [
-                            { date: "12/2024", title: "Launch!", desc: "Ra mắt sản phẩm chính thức" },
-                            { date: "01/2025", title: "Celebration", desc: "Ăn mừng thành công cùng đội ngũ" }
-                        ],
+                        description: "Chủ nghĩa duy vật lịch sử vận dụng quan điểm duy vật biện chứng vào nghiên cứu đời sống xã hội và lịch sử loài người.",
                         subNodes: [
-                            { id: "6a", label: "Celebration", desc: "Ăn mừng và ghi nhận thành tích" },
-                            { id: "6b", label: "New Goals", desc: "Đặt ra mục tiêu mới" },
-                            { id: "6c", label: "Scale Up", desc: "Mở rộng quy mô" }
+                            { id: "6a", label: "Hình thái KT-XH", desc: "5 hình thái kinh tế-xã hội" },
+                            { id: "6b", label: "LLSX & QHSX", desc: "Quy luật về sự phù hợp" },
+                            { id: "6c", label: "CSHT & KTTT", desc: "Mối quan hệ biện chứng" }
                         ]
                     }
                 },
+                {
+                    id: 7, label: "Học thuyết giá trị", desc: "Cơ sở của kinh tế chính trị",
+                    x: 40, y: 120, parent: 3, children: [], color: 0xFF6B6B,
+                    content: {
+                        description: "Học thuyết giá trị lao động khẳng định lao động là nguồn gốc của mọi giá trị. Đây là nền tảng cho học thuyết giá trị thặng dư.",
+                        subNodes: [
+                            { id: "7a", label: "Giá trị sử dụng", desc: "Thuộc tính tự nhiên của hàng hóa" },
+                            { id: "7b", label: "Giá trị trao đổi", desc: "Thuộc tính xã hội của hàng hóa" }
+                        ]
+                    }
+                },
+                {
+                    id: 8, label: "Đảng Cộng sản", desc: "Đội tiên phong của giai cấp công nhân",
+                    x: 120, y: -20, parent: 4, children: [], color: 0xE74C3C,
+                    content: {
+                        description: "Đảng Cộng sản là đội tiên phong của giai cấp công nhân, đại biểu trung thành lợi ích của giai cấp công nhân và nhân dân lao động.",
+                        events: [
+                            { date: "1903", title: "Đảng Bolshevik", desc: "Lênin xây dựng đảng kiểu mới" },
+                            { date: "1930", title: "Đảng CSVN thành lập", desc: "Hồ Chí Minh sáng lập Đảng" }
+                        ],
+                        subNodes: [
+                            { id: "8a", label: "Nguyên tắc tổ chức", desc: "Tập trung dân chủ" },
+                            { id: "8b", label: "Vai trò lãnh đạo", desc: "Đảng lãnh đạo toàn diện" }
+                        ]
+                    }
+                }
             ],
             connections: [
-                { from: 1, to: 2 },
-                { from: 1, to: 3 },
-                { from: 2, to: 4 },
-                { from: 3, to: 5 },
-                { from: 2, to: 6 },
-                { from: 3, to: 6 },
+                { from: 1, to: 2 }, { from: 1, to: 3 }, { from: 1, to: 4 },
+                { from: 2, to: 5 }, { from: 2, to: 6 }, { from: 3, to: 7 }, { from: 4, to: 8 }
             ]
         };
 
-        // ==========================================
-        // 2. GLOBAL VARIABLES
-        // ==========================================
-        let scene, camera, renderer;
-        let timelineGroup, particleSystem, nodeParticles = {};
-        let nodeMeshes = [], connectionLines = [];
-        let bgStars;
+        let scene, camera, renderer, timelineGroup, nodeMeshes = [], connectionLines = [];
+        let currentZoom = 1.0, panOffset = { x: 0, y: 0 };
+        let selectedNode = null, hoveredNode = null;
+        let leftHand = null, prevPinchDist = 0, prevPanPos = null;
+        let isInDetailView = false, currentDetailNode = null;
 
-        // Interaction state
-        let currentZoom = 1.0;
-        let panOffset = { x: 0, y: 0 };
-        let selectedNode = null;
-        let hoveredNode = null;
-
-        // Hand tracking
-        let leftHand = null, rightHand = null;
-        let prevPinchDist = 0;
-
-        // NEW: Delta-based pan (preserve position when hand leaves)
-        let prevPanPos = null;
-        let isPanning = false;
-
-        // NEW: Virtual cursor
-        let cursorEnabled = false;
-        let cursorX = window.innerWidth / 2;
-        let cursorY = window.innerHeight / 2;
-
-        // NEW: Toggle cursor function
-        function toggleCursor() {
-            cursorEnabled = !cursorEnabled;
-            const btn = document.getElementById('btn-toggle-cursor');
-            const cursor = document.getElementById('virtual-cursor');
-            if (cursorEnabled) {
-                btn.textContent = '👆 Con trỏ: Bật';
-                btn.classList.add('active');
-                cursor.style.display = 'block';
-            } else {
-                btn.textContent = '👆 Con trỏ: Tắt';
-                btn.classList.remove('active');
-                cursor.style.display = 'none';
-            }
-        }
-
-        // NEW: Check if hand is a fist (all fingers closed)
-        function isFist(landmarks) {
-            const fingers = countExtendedFingers(landmarks);
-            return !fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky;
-        }
-
-        // ==========================================
-        // DETAIL VIEW (Drill-down) Functions
-        // ==========================================
-        let isInDetailView = false;
-        let currentDetailNode = null;
-        let detailViewCooldown = false; // Prevent immediate exit
-        let lastDetailOpenTime = 0;
-        const DETAIL_COOLDOWN_MS = 1500; // 1.5 seconds cooldown
-
-        function openDetailView(node) {
-            if (!node || !node.content) return;
-
-            // Prevent opening again if already in detail view
-            if (isInDetailView) return;
-
-            isInDetailView = true;
-            currentDetailNode = node;
-            detailViewCooldown = true;
-            lastDetailOpenTime = Date.now();
-
-            // Reset cooldown after delay
-            setTimeout(() => {
-                detailViewCooldown = false;
-            }, DETAIL_COOLDOWN_MS);
-
-            const overlay = document.getElementById('detail-overlay');
-            const title = document.getElementById('detail-title');
-            const desc = document.getElementById('detail-description');
-            const videoSection = document.getElementById('video-section');
-            const videoFrame = document.getElementById('detail-video');
-            const eventsSection = document.getElementById('events-section');
-            const eventsContainer = document.getElementById('detail-events');
-            const subnodesSection = document.getElementById('subnodes-section');
-            const subnodesContainer = document.getElementById('detail-subnodes');
-
-            // Set title and description
-            title.textContent = node.label;
-            desc.textContent = node.content.description;
-
-            // Video
-            if (node.content.video) {
-                videoSection.style.display = 'block';
-                videoFrame.src = node.content.video;
-            } else {
-                videoSection.style.display = 'none';
-                videoFrame.src = '';
-            }
-
-            // Events
-            if (node.content.events && node.content.events.length > 0) {
-                eventsSection.style.display = 'block';
-                eventsContainer.innerHTML = node.content.events.map(event => `
-                    <div class="event-item">
-                        <div class="event-date">${event.date}</div>
-                        <div class="event-content">
-                            <h4>${event.title}</h4>
-                            <p>${event.desc}</p>
-                        </div>
-                    </div>
-                `).join('');
-            } else {
-                eventsSection.style.display = 'none';
-            }
-
-            // Sub-nodes
-            if (node.content.subNodes && node.content.subNodes.length > 0) {
-                subnodesSection.style.display = 'block';
-                subnodesContainer.innerHTML = node.content.subNodes.map(subNode => `
-                    <div class="subnode-card">
-                        <h4>${subNode.label}</h4>
-                        <p>${subNode.desc}</p>
-                    </div>
-                `).join('');
-            } else {
-                subnodesSection.style.display = 'none';
-            }
-
-            // Show overlay with animation
-            overlay.style.display = 'block';
-            requestAnimationFrame(() => {
-                overlay.classList.add('active');
-            });
-
-            // Update status
-            document.getElementById('status').textContent = `📂 Đang xem: ${node.label} (Nắm đấm để thoát)`;
-        }
-
-        function exitDetailView() {
-            // Check cooldown - only exit if enough time has passed
-            if (detailViewCooldown) {
-                return; // Don't exit during cooldown
-            }
-
-            isInDetailView = false;
-            currentDetailNode = null;
-
-            const overlay = document.getElementById('detail-overlay');
-            const videoFrame = document.getElementById('detail-video');
-
-            // Stop video
-            videoFrame.src = '';
-
-            // Hide overlay with animation
-            overlay.classList.remove('active');
-            setTimeout(() => {
-                overlay.style.display = 'none';
-            }, 500);
-
-            document.getElementById('status').textContent = 'Đã quay lại Timeline chính';
-        }
-
-        // ==========================================
-        // 3. THREE.JS INITIALIZATION
-        // ==========================================
         function init3D() {
             const container = document.getElementById('canvas-container');
-
             scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x0a0a1a, 0.003);
-
+            scene.fog = new THREE.FogExp2(0x1a0a0a, 0.003);
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.z = 150;
-
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             container.appendChild(renderer.domElement);
 
-            // Create main group for timeline (for pan/zoom)
             timelineGroup = new THREE.Group();
             scene.add(timelineGroup);
 
-            // Create elements
-            createBackgroundStars();
-            createParticleSystem();
-            createTimeline();
             createNodes();
             createConnections();
-
+            createBackground();
             animate();
         }
 
-        // ==========================================
-        // 4. BACKGROUND STARS
-        // ==========================================
-        function createBackgroundStars() {
-            const starCount = 500;
-            const positions = [], sizes = [], phases = [];
-
-            for (let i = 0; i < starCount; i++) {
-                const radius = 200 + Math.random() * 150;
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.random() * Math.PI;
-
-                positions.push(
-                    radius * Math.sin(phi) * Math.cos(theta),
-                    radius * Math.sin(phi) * Math.sin(theta),
-                    radius * Math.cos(phi)
-                );
-                sizes.push(0.5 + Math.random() * 2);
-                phases.push(Math.random() * Math.PI * 2);
-            }
-
-            const geo = new THREE.BufferGeometry();
-            geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-            geo.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
-            geo.userData = { phases };
-
-            const starCanvas = document.createElement('canvas');
-            starCanvas.width = 64; starCanvas.height = 64;
-            const ctx = starCanvas.getContext('2d');
-            const grd = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-            grd.addColorStop(0, '#FFFFFF');
-            grd.addColorStop(0.3, '#FFFFCC');
-            grd.addColorStop(1, 'rgba(255,255,200,0)');
-            ctx.fillStyle = grd;
-            ctx.fillRect(0, 0, 64, 64);
-
-            const starTex = new THREE.CanvasTexture(starCanvas);
-            const mat = new THREE.PointsMaterial({
-                size: 2,
-                map: starTex,
-                transparent: true,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false
-            });
-
-            bgStars = new THREE.Points(geo, mat);
-            scene.add(bgStars);
-        }
-
-        // ==========================================
-        // 5. FLOATING PARTICLES (Main Effect)
-        // ==========================================
-        function createParticleSystem() {
-            const positions = [], colors = [], sizes = [], phases = [], velocities = [];
-
-            for (let i = 0; i < CONFIG.particleCount; i++) {
-                // Random position along timeline
-                const x = (Math.random() - 0.5) * CONFIG.timelineLength * 2;
-                const y = (Math.random() - 0.5) * 150;
-                const z = (Math.random() - 0.5) * 100;
-                positions.push(x, y, z);
-
-                // Golden warm colors
-                const hue = 0.1 + Math.random() * 0.1; // Gold to orange
-                const color = new THREE.Color().setHSL(hue, 0.8, 0.6);
-                colors.push(color.r, color.g, color.b);
-
-                sizes.push(1 + Math.random() * 2);
-                phases.push(Math.random() * Math.PI * 2);
-                velocities.push(
-                    (Math.random() - 0.5) * 0.3,
-                    (Math.random() - 0.5) * 0.2,
-                    (Math.random() - 0.5) * 0.2
-                );
-            }
-
-            const geo = new THREE.BufferGeometry();
-            geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-            geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-            geo.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
-            geo.userData = { phases, velocities, originalPositions: [...positions] };
-
-            const particleCanvas = document.createElement('canvas');
-            particleCanvas.width = 64; particleCanvas.height = 64;
-            const ctx = particleCanvas.getContext('2d');
-            const grd = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-            grd.addColorStop(0, '#FFFFFF');
-            grd.addColorStop(0.2, '#FFD700');
-            grd.addColorStop(0.6, '#FF8C00');
-            grd.addColorStop(1, 'rgba(255,140,0,0)');
-            ctx.fillStyle = grd;
-            ctx.fillRect(0, 0, 64, 64);
-
-            const particleTex = new THREE.CanvasTexture(particleCanvas);
-            const mat = new THREE.PointsMaterial({
-                size: 2.5,
-                map: particleTex,
-                transparent: true,
-                vertexColors: true,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false
-            });
-
-            particleSystem = new THREE.Points(geo, mat);
-            timelineGroup.add(particleSystem);
-        }
-
-        // ==========================================
-        // 6. TIMELINE LINE
-        // ==========================================
-        function createTimeline() {
-            // Main timeline curve
-            const curve = new THREE.CatmullRomCurve3([
-                new THREE.Vector3(-CONFIG.timelineLength, 0, 0),
-                new THREE.Vector3(-50, 5, 10),
-                new THREE.Vector3(0, 0, 0),
-                new THREE.Vector3(50, -5, -10),
-                new THREE.Vector3(CONFIG.timelineLength, 0, 0)
-            ]);
-
-            const points = curve.getPoints(100);
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-
-            const material = new THREE.LineBasicMaterial({
-                color: 0xFFD700,
-                linewidth: 2,
-                transparent: true,
-                opacity: 0.6
-            });
-
-            const timeline = new THREE.Line(geometry, material);
-            timelineGroup.add(timeline);
-
-            // Glow effect (larger line behind)
-            const glowMaterial = new THREE.LineBasicMaterial({
-                color: 0xFFD700,
-                linewidth: 4,
-                transparent: true,
-                opacity: 0.2
-            });
-            const glowLine = new THREE.Line(geometry.clone(), glowMaterial);
-            glowLine.scale.set(1.02, 1.02, 1.02);
-            timelineGroup.add(glowLine);
-        }
-
-        // ==========================================
-        // 7. NODES (Interactive Points)
-        // ==========================================
         function createNodes() {
-            timelineData.nodes.forEach(nodeData => {
-                // Node sphere
-                const geometry = new THREE.SphereGeometry(CONFIG.nodeRadius, 32, 32);
-                const material = new THREE.MeshBasicMaterial({
-                    color: nodeData.color,
-                    transparent: true,
-                    opacity: 0.9
-                });
-
-                const mesh = new THREE.Mesh(geometry, material);
-                mesh.position.set(nodeData.x, nodeData.y, 0);
-                mesh.userData = nodeData;
+            timelineData.nodes.forEach(node => {
+                const geo = new THREE.SphereGeometry(CONFIG.nodeRadius, 32, 32);
+                const mat = new THREE.MeshBasicMaterial({ color: node.color, transparent: true, opacity: 0.9 });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(node.x, node.y, 0);
+                mesh.userData = node;
                 timelineGroup.add(mesh);
                 nodeMeshes.push(mesh);
 
-                // Glow ring around node
-                const ringGeo = new THREE.RingGeometry(CONFIG.nodeRadius + 2, CONFIG.nodeRadius + 4, 32);
-                const ringMat = new THREE.MeshBasicMaterial({
-                    color: nodeData.color,
-                    transparent: true,
-                    opacity: 0.3,
-                    side: THREE.DoubleSide
-                });
-                const ring = new THREE.Mesh(ringGeo, ringMat);
-                ring.position.set(nodeData.x, nodeData.y, 0);
-                mesh.userData.ring = ring;
-                timelineGroup.add(ring);
-
-                // Node particles
-                createNodeParticles(nodeData);
-
                 // Label
-                createNodeLabel(nodeData);
+                const canvas = document.createElement('canvas');
+                canvas.width = 512; canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                ctx.font = 'bold 28px Arial';
+                ctx.fillStyle = '#FFFFFF';
+                ctx.textAlign = 'center';
+                ctx.fillText(node.label, 256, 40);
+                const tex = new THREE.CanvasTexture(canvas);
+                const labelMat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+                const label = new THREE.Sprite(labelMat);
+                label.scale.set(40, 5, 1);
+                label.position.set(node.x, node.y - 18, 0);
+                timelineGroup.add(label);
             });
         }
 
-        function createNodeParticles(nodeData) {
-            const positions = [], colors = [], phases = [];
-            const count = CONFIG.nodeParticleCount;
-
-            for (let i = 0; i < count; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const radius = 15 + Math.random() * 20;
-                const x = nodeData.x + Math.cos(angle) * radius;
-                const y = nodeData.y + Math.sin(angle) * radius;
-                const z = (Math.random() - 0.5) * 30;
-                positions.push(x, y, z);
-
-                const color = new THREE.Color(nodeData.color);
-                colors.push(color.r, color.g, color.b);
-                phases.push(Math.random() * Math.PI * 2);
-            }
-
-            const geo = new THREE.BufferGeometry();
-            geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-            geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-            geo.userData = { phases, nodeData, originalPositions: [...positions] };
-
-            const mat = new THREE.PointsMaterial({
-                size: 1.5,
-                vertexColors: true,
-                transparent: true,
-                opacity: 0.6,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false
-            });
-
-            const particles = new THREE.Points(geo, mat);
-            nodeParticles[nodeData.id] = particles;
-            timelineGroup.add(particles);
-        }
-
-        function createNodeLabel(nodeData) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 256; canvas.height = 64;
-            const ctx = canvas.getContext('2d');
-
-            ctx.font = 'bold 24px Segoe UI';
-            ctx.fillStyle = '#FFFFFF';
-            ctx.textAlign = 'center';
-            ctx.shadowColor = 'rgba(0,0,0,0.8)';
-            ctx.shadowBlur = 8;
-            ctx.fillText(nodeData.label, 128, 40);
-
-            const texture = new THREE.CanvasTexture(canvas);
-            const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
-            const sprite = new THREE.Sprite(material);
-            sprite.scale.set(40, 10, 1);
-            sprite.position.set(nodeData.x, nodeData.y - 18, 0);
-            timelineGroup.add(sprite);
-        }
-
-        // ==========================================
-        // 8. CONNECTIONS (Lines between nodes)
-        // ==========================================
         function createConnections() {
+            const mat = new THREE.LineBasicMaterial({ color: 0xFF6B6B, transparent: true, opacity: 0.4 });
             timelineData.connections.forEach(conn => {
                 const fromNode = timelineData.nodes.find(n => n.id === conn.from);
                 const toNode = timelineData.nodes.find(n => n.id === conn.to);
-
                 if (fromNode && toNode) {
-                    const curve = new THREE.QuadraticBezierCurve3(
+                    const points = [
                         new THREE.Vector3(fromNode.x, fromNode.y, 0),
-                        new THREE.Vector3((fromNode.x + toNode.x) / 2, (fromNode.y + toNode.y) / 2 + 20, 10),
                         new THREE.Vector3(toNode.x, toNode.y, 0)
-                    );
-
-                    const points = curve.getPoints(30);
-                    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                    const material = new THREE.LineBasicMaterial({
-                        color: 0x4ECDC4,
-                        transparent: true,
-                        opacity: 0.4
-                    });
-
-                    const line = new THREE.Line(geometry, material);
-                    connectionLines.push(line);
+                    ];
+                    const geo = new THREE.BufferGeometry().setFromPoints(points);
+                    const line = new THREE.Line(geo, mat);
                     timelineGroup.add(line);
+                    connectionLines.push(line);
                 }
             });
         }
 
-        // ==========================================
-        // 9. ANIMATION LOOP
-        // ==========================================
+        function createBackground() {
+            const starCount = 300;
+            const positions = [];
+            for (let i = 0; i < starCount; i++) {
+                positions.push(
+                    (Math.random() - 0.5) * 400,
+                    (Math.random() - 0.5) * 400,
+                    -50 - Math.random() * 100
+                );
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            const mat = new THREE.PointsMaterial({ color: 0xFF6666, size: 1, transparent: true, opacity: 0.5 });
+            scene.add(new THREE.Points(geo, mat));
+        }
+
         function animate() {
             requestAnimationFrame(animate);
-            const time = Date.now() * 0.001;
-
-            // Animate background stars
-            if (bgStars) {
-                bgStars.rotation.y += 0.0002;
-                const starSizes = bgStars.geometry.attributes.size.array;
-                const starPhases = bgStars.geometry.userData.phases;
-                for (let i = 0; i < starSizes.length; i++) {
-                    starSizes[i] = 1 + Math.sin(time * 2 + starPhases[i]) * 0.5;
-                }
-                bgStars.geometry.attributes.size.needsUpdate = true;
-            }
-
-            // Animate main particles
-            if (particleSystem) {
-                const positions = particleSystem.geometry.attributes.position.array;
-                const phases = particleSystem.geometry.userData.phases;
-                const velocities = particleSystem.geometry.userData.velocities;
-
-                for (let i = 0; i < positions.length; i += 3) {
-                    const idx = i / 3;
-                    // Floating motion
-                    positions[i] += velocities[idx * 3] * 0.5;
-                    positions[i + 1] += Math.sin(time + phases[idx]) * 0.1;
-                    positions[i + 2] += velocities[idx * 3 + 2] * 0.3;
-
-                    // Wrap around
-                    if (positions[i] > CONFIG.timelineLength) positions[i] = -CONFIG.timelineLength;
-                    if (positions[i] < -CONFIG.timelineLength) positions[i] = CONFIG.timelineLength;
-                }
-                particleSystem.geometry.attributes.position.needsUpdate = true;
-            }
-
-            // Animate node particles
-            Object.values(nodeParticles).forEach(particles => {
-                const positions = particles.geometry.attributes.position.array;
-                const phases = particles.geometry.userData.phases;
-                const original = particles.geometry.userData.originalPositions;
-                const nodeData = particles.geometry.userData.nodeData;
-
-                for (let i = 0; i < positions.length; i += 3) {
-                    const idx = i / 3;
-                    // Orbit motion around node
-                    const angle = time * 0.5 + phases[idx];
-                    const radius = 15 + Math.sin(time * 2 + phases[idx]) * 5;
-                    positions[i] = nodeData.x + Math.cos(angle + idx * 0.1) * radius;
-                    positions[i + 1] = nodeData.y + Math.sin(angle + idx * 0.1) * radius * 0.5;
-                    positions[i + 2] = Math.sin(time + phases[idx]) * 10;
-                }
-                particles.geometry.attributes.position.needsUpdate = true;
-
-                // Highlight if selected
-                if (selectedNode && selectedNode.id === particles.geometry.userData.nodeData.id) {
-                    particles.material.opacity = 0.9;
-                } else {
-                    particles.material.opacity = 0.4;
-                }
-            });
-
-            // Animate node rings
-            nodeMeshes.forEach(mesh => {
-                if (mesh.userData.ring) {
-                    mesh.userData.ring.rotation.z += 0.01;
-                    if (hoveredNode && hoveredNode.id === mesh.userData.id) {
-                        mesh.userData.ring.material.opacity = 0.8;
-                        mesh.scale.set(1.2, 1.2, 1.2);
-                    } else {
-                        mesh.userData.ring.material.opacity = 0.3;
-                        mesh.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
-                    }
-                }
-            });
-
-            // Apply zoom and pan
-            timelineGroup.scale.set(currentZoom, currentZoom, currentZoom);
-            timelineGroup.position.x += (panOffset.x - timelineGroup.position.x) * 0.1;
-            timelineGroup.position.y += (panOffset.y - timelineGroup.position.y) * 0.1;
-
+            timelineGroup.scale.set(currentZoom, currentZoom, 1);
+            timelineGroup.position.set(panOffset.x, panOffset.y, 0);
+            nodeMeshes.forEach(mesh => { mesh.rotation.y += 0.005; });
             renderer.render(scene, camera);
         }
 
-        // ==========================================
-        // 10. HAND GESTURE RECOGNITION
-        // ==========================================
-        function isFingerExtended(landmarks, fingerTip, fingerPIP) {
-            const wrist = landmarks[0];
-            const tipDist = Math.hypot(landmarks[fingerTip].x - wrist.x, landmarks[fingerTip].y - wrist.y);
-            const pipDist = Math.hypot(landmarks[fingerPIP].x - wrist.x, landmarks[fingerPIP].y - wrist.y);
-            return tipDist > pipDist * 1.1;
-        }
-
         function countExtendedFingers(landmarks) {
-            return {
-                index: isFingerExtended(landmarks, 8, 6),
-                middle: isFingerExtended(landmarks, 12, 10),
-                ring: isFingerExtended(landmarks, 16, 14),
-                pinky: isFingerExtended(landmarks, 20, 18)
-            };
+            const tips = [8, 12, 16, 20];
+            const pips = [6, 10, 14, 18];
+            let count = { index: false, middle: false, ring: false, pinky: false };
+            const names = ['index', 'middle', 'ring', 'pinky'];
+            tips.forEach((tip, i) => {
+                count[names[i]] = landmarks[tip].y < landmarks[pips[i]].y;
+            });
+            count.thumb = landmarks[4].x < landmarks[3].x;
+            return count;
         }
 
         function getPinchDistance(landmarks) {
-            return Math.hypot(
-                landmarks[4].x - landmarks[8].x,
-                landmarks[4].y - landmarks[8].y
-            );
+            const thumb = landmarks[4], index = landmarks[8];
+            return Math.hypot(thumb.x - index.x, thumb.y - index.y);
         }
 
-        function isOpenHand(landmarks) {
-            const fingers = countExtendedFingers(landmarks);
-            // Check thumb is also extended (thumb tip far from index base)
-            const thumbTip = landmarks[4];
-            const indexBase = landmarks[5];
-            const thumbExtended = Math.hypot(thumbTip.x - indexBase.x, thumbTip.y - indexBase.y) > 0.1;
-
-            // All 5 fingers must be extended for open hand
-            return thumbExtended && fingers.index && fingers.middle && fingers.ring && fingers.pinky;
+        function isFist(landmarks) {
+            const f = countExtendedFingers(landmarks);
+            return !f.index && !f.middle && !f.ring && !f.pinky;
         }
 
-        // Check if only pointing with index finger (1 finger)
-        function isPointingFinger(landmarks) {
-            const fingers = countExtendedFingers(landmarks);
-            return fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky;
-        }
+        function onHandResults(results) {
+            const preview = document.getElementById('camera-preview');
+            const ctx = preview.getContext('2d');
+            ctx.save();
+            ctx.clearRect(0, 0, preview.width, preview.height);
+            ctx.drawImage(results.image, 0, 0, preview.width, preview.height);
+            ctx.restore();
 
-        function processHands(results) {
-            leftHand = null;
-            rightHand = null;
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                const fingers = countExtendedFingers(landmarks);
+                const pinchDist = getPinchDistance(landmarks);
+                const palmX = landmarks[9].x;
+                const palmY = landmarks[9].y;
 
-            if (results.multiHandLandmarks && results.multiHandedness) {
-                results.multiHandLandmarks.forEach((landmarks, i) => {
-                    const handedness = results.multiHandedness[i].label;
-                    // MediaPipe mirrors, so Left in image = Right hand in reality
-                    if (handedness === 'Left') {
-                        rightHand = landmarks;
-                    } else {
-                        leftHand = landmarks;
+                // Fist = go back
+                if (isFist(landmarks)) {
+                    if (isInDetailView) exitDetailView();
+                    document.getElementById('status').textContent = '✊ Nắm đấm - Quay lại';
+                }
+                // Open hand = pan
+                else if (fingers.index && fingers.middle && fingers.ring && fingers.pinky) {
+                    if (prevPanPos) {
+                        panOffset.x += (prevPanPos.x - palmX) * 200;
+                        panOffset.y -= (prevPanPos.y - palmY) * 200;
                     }
-                });
-            }
-
-            let statusText = '';
-            const cursor = document.getElementById('virtual-cursor');
-
-            // Get any available hand for gestures
-            const anyHand = rightHand || leftHand;
-
-            // ==========================================
-            // FIST GESTURE (any hand) - Zoom out OR Exit detail view
-            // ==========================================
-            if (anyHand && isFist(anyHand)) {
-                if (isInDetailView) {
-                    exitDetailView();
-                    statusText = `✊ Đã thoát khỏi chi tiết`;
-                } else {
-                    currentZoom = Math.max(CONFIG.zoomMin, currentZoom - 0.02);
-                    statusText = `✊ Thu nhỏ: ${(currentZoom * 100).toFixed(0)}%`;
+                    prevPanPos = { x: palmX, y: palmY };
+                    document.getElementById('status').textContent = '🖐 Di chuyển';
                 }
-            }
-
-            // Skip other gestures if in detail view (except fist)
-            if (isInDetailView) {
-                if (statusText) {
-                    document.getElementById('status').textContent = statusText;
-                }
-                return;
-            }
-
-            // ==========================================
-            // PINCH GESTURE (any hand) - Zoom OR Enter detail view
-            // ==========================================
-            if (anyHand) {
-                const pinchDist = getPinchDistance(anyHand);
-
-                if (pinchDist < 0.06) {
-                    // Pinching
-                    if (selectedNode && selectedNode.content) {
-                        // Node selected - open detail view
-                        const fullNode = timelineData.nodes.find(n => n.id === selectedNode.id);
-                        if (fullNode) {
-                            openDetailView(fullNode);
-                            statusText = `🤏 Mở chi tiết: ${fullNode.label}`;
-                        }
-                    } else {
-                        // No node selected - zoom in
-                        currentZoom = Math.min(CONFIG.zoomMax, currentZoom + 0.02);
-                        statusText = `🤏 Zoom in: ${(currentZoom * 100).toFixed(0)}%`;
+                // Pinch = zoom / enter detail
+                else if (pinchDist < 0.08) {
+                    if (prevPinchDist > 0) {
+                        const delta = prevPinchDist - pinchDist;
+                        currentZoom = Math.max(0.3, Math.min(3, currentZoom + delta * 5));
                     }
-                }
-            }
-
-            // ==========================================
-            // OPEN HAND (any hand, 5 fingers) - Pan/Move
-            // ==========================================
-            if (anyHand && isOpenHand(anyHand)) {
-                const palmX = anyHand[9].x;
-                const palmY = anyHand[9].y;
-
-                if (prevPanPos) {
-                    const deltaX = (prevPanPos.x - palmX) * 300;
-                    const deltaY = (palmY - prevPanPos.y) * 200;
-                    panOffset.x += deltaX;
-                    panOffset.y += deltaY;
-                }
-
-                prevPanPos = { x: palmX, y: palmY };
-                isPanning = true;
-                statusText = `🖐 Di chuyển: X=${panOffset.x.toFixed(0)}, Y=${panOffset.y.toFixed(0)}`;
-            } else {
-                prevPanPos = null;
-                isPanning = false;
-            }
-
-            // ==========================================
-            // RIGHT HAND ONLY - Cursor and Selection (Hi gesture)
-            // ==========================================
-            if (rightHand) {
-                const fingers = countExtendedFingers(rightHand);
-                const indexTip = rightHand[8];
-
-                // Convert to screen coordinates (mirrored)
-                const screenX = (1 - indexTip.x) * window.innerWidth;
-                const screenY = indexTip.y * window.innerHeight;
-
-                // Update virtual cursor (RIGHT HAND ONLY)
-                if (cursorEnabled) {
-                    cursorX = screenX;
-                    cursorY = screenY;
-                    cursor.style.left = cursorX + 'px';
-                    cursor.style.top = cursorY + 'px';
-                    cursor.classList.toggle('active', !!hoveredNode);
-                }
-
-                // Check node hover (RIGHT HAND controls cursor)
-                checkNodeHover(screenX, screenY);
-
-                // "Hi" gesture: index + middle extended, ring + pinky closed
-                if (fingers.index && fingers.middle && !fingers.ring && !fingers.pinky) {
-                    if (hoveredNode) {
-                        selectedNode = hoveredNode;
-                        showNodeInfo(selectedNode);
-                        statusText = `✌️ Đã chọn: ${selectedNode.label}`;
-                    } else {
-                        statusText = `✌️ Đang chọn... (di chuyển đến node)`;
+                    prevPinchDist = pinchDist;
+                    if (selectedNode && !isInDetailView) {
+                        openDetailView(selectedNode);
                     }
+                    document.getElementById('status').textContent = '🤏 Zoom / Vào chi tiết';
                 }
-            }
-
-            // ==========================================
-            // UPDATE STATUS
-            // ==========================================
-            if (statusText) {
-                document.getElementById('status').textContent = statusText;
-            } else if (!leftHand && !rightHand) {
-                document.getElementById('status').textContent = 'Đưa tay vào camera để điều khiển';
+                // 2 fingers = select
+                else if (fingers.index && fingers.middle && !fingers.ring && !fingers.pinky) {
+                    const screenX = (1 - palmX) * window.innerWidth;
+                    const screenY = palmY * window.innerHeight;
+                    checkNodeHover(screenX, screenY);
+                    document.getElementById('status').textContent = '✌️ Đang chọn node';
+                    prevPanPos = null;
+                }
+                else {
+                    prevPanPos = null;
+                    prevPinchDist = 0;
+                }
             }
         }
 
         function checkNodeHover(screenX, screenY) {
-            const raycaster = new THREE.Raycaster();
             const mouse = new THREE.Vector2(
                 (screenX / window.innerWidth) * 2 - 1,
                 -(screenY / window.innerHeight) * 2 + 1
             );
-
+            const raycaster = new THREE.Raycaster();
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(nodeMeshes);
 
             if (intersects.length > 0) {
-                hoveredNode = intersects[0].object.userData;
+                const node = intersects[0].object.userData;
+                selectedNode = node;
+                document.getElementById('node-info').style.display = 'block';
+                document.getElementById('node-title').textContent = node.label;
+                document.getElementById('node-desc').textContent = node.desc;
             } else {
-                hoveredNode = null;
+                document.getElementById('node-info').style.display = 'none';
             }
         }
 
-        function showNodeInfo(node) {
-            const infoPanel = document.getElementById('node-info');
-            document.getElementById('node-title').textContent = node.label;
-            document.getElementById('node-desc').textContent = node.desc;
-            infoPanel.style.display = 'block';
+        function openDetailView(node) {
+            if (!node || !node.content) return;
+            isInDetailView = true;
+            currentDetailNode = node;
+
+            document.getElementById('detail-title').textContent = node.label;
+            document.getElementById('detail-description').textContent = node.content.description;
+
+            const eventsSection = document.getElementById('events-section');
+            const eventsContainer = document.getElementById('detail-events');
+            if (node.content.events && node.content.events.length > 0) {
+                eventsSection.style.display = 'block';
+                eventsContainer.innerHTML = node.content.events.map(e =>
+                    `<div class="event-item"><div class="event-date">${e.date}</div><div class="event-content"><h4>${e.title}</h4><p>${e.desc}</p></div></div>`
+                ).join('');
+            } else {
+                eventsSection.style.display = 'none';
+            }
+
+            const subnodesSection = document.getElementById('subnodes-section');
+            const subnodesContainer = document.getElementById('detail-subnodes');
+            if (node.content.subNodes && node.content.subNodes.length > 0) {
+                subnodesSection.style.display = 'block';
+                subnodesContainer.innerHTML = node.content.subNodes.map(s =>
+                    `<div class="subnode-card"><h4>${s.label}</h4><p>${s.desc}</p></div>`
+                ).join('');
+            } else {
+                subnodesSection.style.display = 'none';
+            }
+
+            document.getElementById('detail-overlay').classList.add('active');
         }
 
-        // ==========================================
-        // 11. START SYSTEM
-        // ==========================================
-        function startSystem() {
+        function exitDetailView() {
+            isInDetailView = false;
+            currentDetailNode = null;
+            document.getElementById('detail-overlay').classList.remove('active');
+        }
+
+        async function startSystem() {
             document.getElementById('btnStart').style.display = 'none';
             document.getElementById('status').textContent = 'Đang khởi động camera...';
 
-            init3D();
-
             const video = document.querySelector('.input_video');
-            const canvas = document.getElementById('camera-preview');
-            const ctx = canvas.getContext('2d');
-
             const hands = new Hands({
-                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+                locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
             });
-
             hands.setOptions({
-                maxNumHands: 2,
+                maxNumHands: 1,
                 modelComplexity: 1,
                 minDetectionConfidence: 0.7,
                 minTrackingConfidence: 0.5
             });
+            hands.onResults(onHandResults);
 
-            hands.onResults((results) => {
-                // Draw camera preview
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
-
-                // Draw hand landmarks
-                if (results.multiHandLandmarks) {
-                    results.multiHandLandmarks.forEach(landmarks => {
-                        // Draw fingertips
-                        [4, 8, 12, 16, 20].forEach(tip => {
-                            ctx.beginPath();
-                            ctx.arc(landmarks[tip].x * canvas.width, landmarks[tip].y * canvas.height, 4, 0, Math.PI * 2);
-                            ctx.fillStyle = '#FFD700';
-                            ctx.fill();
-                        });
-                    });
-                }
-
-                processHands(results);
+            const cam = new Camera(video, {
+                onFrame: async () => { await hands.send({ image: video }); },
+                width: 640, height: 480
             });
-
-            const cameraUtils = new Camera(video, {
-                onFrame: async () => {
-                    await hands.send({ image: video });
-                },
-                width: 640,
-                height: 480
-            });
-
-            cameraUtils.start().then(() => {
-                document.getElementById('status').textContent = 'Sẵn sàng! Đưa tay vào camera';
-            });
+            await cam.start();
+            document.getElementById('status').textContent = '✅ Sẵn sàng! Dùng cử chỉ tay để điều khiển';
         }
 
-        // ==========================================
-        // 12. WINDOW RESIZE
-        // ==========================================
         window.addEventListener('resize', () => {
-            if (camera && renderer) {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            }
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // ==========================================
-        // 13. MOUSE CONTROLS
-        // ==========================================
-        let isMouseDragging = false;
-        let lastMousePos = { x: 0, y: 0 };
-
-        // Mouse move - update hover and cursor
-        document.addEventListener('mousemove', (e) => {
-            if (isInDetailView) return;
-
-            // Update hover
-            checkNodeHover(e.clientX, e.clientY);
-
-            // Drag to pan
-            if (isMouseDragging) {
-                const deltaX = (lastMousePos.x - e.clientX) * 0.5;
-                const deltaY = (e.clientY - lastMousePos.y) * 0.5;
-                panOffset.x += deltaX;
-                panOffset.y += deltaY;
-                lastMousePos = { x: e.clientX, y: e.clientY };
-            }
-        });
-
-        // Mouse down - start drag or select
-        document.addEventListener('mousedown', (e) => {
-            if (isInDetailView) return;
-            if (e.target.closest('#controls') || e.target.closest('#header') || e.target.closest('button')) return;
-
-            lastMousePos = { x: e.clientX, y: e.clientY };
-
-            // Check if clicking on a node
-            if (hoveredNode) {
-                selectedNode = hoveredNode;
-                showNodeInfo(selectedNode);
-                document.getElementById('status').textContent = `🖱️ Đã chọn: ${selectedNode.label}`;
-            } else {
-                isMouseDragging = true;
-                document.body.style.cursor = 'grabbing';
-            }
-        });
-
-        // Mouse up - stop drag
-        document.addEventListener('mouseup', () => {
-            isMouseDragging = false;
-            document.body.style.cursor = 'default';
-        });
-
-        // Double click - enter detail view
-        document.addEventListener('dblclick', (e) => {
-            if (isInDetailView) return;
-            if (e.target.closest('#controls') || e.target.closest('#header') || e.target.closest('button')) return;
-
-            if (selectedNode && selectedNode.content) {
-                const fullNode = timelineData.nodes.find(n => n.id === selectedNode.id);
-                if (fullNode) {
-                    openDetailView(fullNode);
-                    document.getElementById('status').textContent = `🖱️ Mở chi tiết: ${fullNode.label}`;
-                }
-            }
-        });
-
-        // Scroll - zoom in/out
-        document.addEventListener('wheel', (e) => {
-            if (isInDetailView) return;
-
-            e.preventDefault();
-            const zoomDelta = e.deltaY > 0 ? -0.05 : 0.05;
-            currentZoom = Math.max(CONFIG.zoomMin, Math.min(CONFIG.zoomMax, currentZoom + zoomDelta));
-            document.getElementById('status').textContent = `🖱️ Zoom: ${(currentZoom * 100).toFixed(0)}%`;
-        }, { passive: false });
-
-        // Right click - exit detail view or reset
-        document.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            if (isInDetailView) {
-                exitDetailView();
-            } else {
-                // Reset pan and zoom
-                panOffset = { x: 0, y: 0 };
-                currentZoom = 1.0;
-                selectedNode = null;
-                document.getElementById('node-info').style.display = 'none';
-                document.getElementById('status').textContent = '🖱️ Đã reset vị trí';
-            }
-        });
+        init3D();
     </script>
 </body>
 
