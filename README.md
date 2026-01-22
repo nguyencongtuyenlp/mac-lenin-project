@@ -1,27 +1,32 @@
-# Dự án Mac-Lenin
+# 🎄 Merry Christmas to the Love of My Life ❤️
 
-## Giới thiệu
-Đây là ứng dụng timeline tương tác để học tập và khám phá các nội dung về **Chủ nghĩa Mác-Lênin**. Ứng dụng sử dụng công nghệ nhận diện cử chỉ tay để điều khiển, mang đến trải nghiệm học tập sinh động và hiện đại.
+Interactive Christmas AR experience with hand gesture recognition.
 
-## Nội dung chính
-- **Triết học Mác-Lênin**: Chủ nghĩa duy vật biện chứng và duy vật lịch sử
-- **Kinh tế chính trị Mác-Lênin**: Học thuyết giá trị thặng dư
-- **Chủ nghĩa xã hội khoa học**: Lý luận về cách mạng và xây dựng CNXH
+## 🎮 How to Use
 
-## Cách sử dụng
-1. Mở file `timeline.html` trong trình duyệt
-2. Nhấn nút "BẮT ĐẦU KHÁM PHÁ"
-3. Cho phép truy cập camera
-4. Sử dụng cử chỉ tay để điều khiển:
-   - 🖐 **Xòe tay**: Di chuyển
-   - ✌️ **2 ngón**: Chọn node
-   - 🤏 **Pinch**: Zoom vào chi tiết
-   - ✊ **Nắm đấm**: Quay lại
+1. Open the website
+2. Click "START MAGIC"
+3. Allow camera access
+4. Use hand gestures:
+   - ✊ **Fist** → Christmas Tree with Santa, Reindeer, Angels & Cat
+   - 🖐 **Open Hand** → Explode gifts & photos
+   - 👆 **1 Finger** → Special message
+   - ✌️ **2 Fingers** → Love message
+   - 🫶 **Two Hands Heart** → Ultimate love message
 
-## Công nghệ
-- Three.js - Đồ họa 3D
-- MediaPipe Hands - Nhận diện cử chỉ tay
-- HTML5/CSS3/JavaScript
+## ✨ Features
 
-## Tác giả
-© nguyencongtuyenlp
+- 3D Christmas Tree with golden particles
+- Santa Claus & 3 Reindeer (Rudolph!) running around
+- 2 Angels flying above
+- Cute cat with Santa hat
+- Twinkling stars background
+- Background music
+- Photo gallery
+- Hand gesture recognition (MediaPipe)
+
+## 💝 Made with Love
+
+Merry Christmas to the love of my life!
+
+© by nguyencongtuyenlp
