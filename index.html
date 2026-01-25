@@ -20,10 +20,10 @@
             box-sizing: border-box;
         }
 
-        /* 🎨 NỀN SỬ THI (EPIC HISTORICAL BACKGROUND) */
+        /* 🎨 NỀN CHỈ LÀ ẢNH nen.png */
         body {
             overflow: hidden;
-            background: radial-gradient(circle at center, #450a0a 0%, #1a0505 85%);
+            background: #000000;
             font-family: 'Segoe UI', 'Arial', sans-serif;
             color: white;
         }
@@ -36,7 +36,7 @@
             left: 0;
         }
 
-        /* Lớp phủ ảnh nền trang trí */
+        /* Ảnh nền chính (100% opacity) */
         .bg-overlay {
             position: fixed;
             top: 0;
@@ -44,7 +44,7 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            opacity: 0.12;
+            opacity: 1.0;
             z-index: 1;
             background-image: url('./nen.png');
             background-size: cover;
@@ -894,8 +894,8 @@
             scene.add(timelineGroup);
 
             // Create elements
-            createBackgroundStars();
-            createParticleSystem();
+            // createBackgroundStars(); // Bỏ hạt nền
+            // createParticleSystem(); // Bỏ hạt chính
             createTimeline();
             createNodes();
             createConnections();
@@ -1164,9 +1164,9 @@
                     const points = curve.getPoints(30);
                     const geometry = new THREE.BufferGeometry().setFromPoints(points);
                     const material = new THREE.LineBasicMaterial({
-                        color: 0x4ECDC4,
+                        color: 0xFFD700,
                         transparent: true,
-                        opacity: 0.4
+                        opacity: 0.7
                     });
 
                     const line = new THREE.Line(geometry, material);
