@@ -95,10 +95,10 @@
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 35px;
+            gap: 15px;
             z-index: 100;
             background: rgba(68, 17, 17, 0.75);
-            padding: 15px 45px;
+            padding: 8px 25px;
             border-radius: 50px;
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 204, 0, 0.25);
@@ -108,14 +108,14 @@
         .gesture-hint {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 13px;
+            gap: 5px;
+            font-size: 11px;
             color: #ddd;
             font-weight: 500;
         }
 
         .gesture-icon {
-            font-size: 22px;
+            font-size: 16px;
             color: #FFD700;
         }
 
@@ -500,20 +500,28 @@
     <!-- Controls Hint -->
     <div id="controls">
         <div class="gesture-hint">
-            <span class="gesture-icon">🖐</span>
-            <span>Xòe tay: Di chuyển</span>
+            <span class="gesture-icon">👈</span>
+            <span>Trái: Di chuyển</span>
+        </div>
+        <div class="gesture-hint">
+            <span class="gesture-icon">☝️</span>
+            <span>P1: Cursor</span>
         </div>
         <div class="gesture-hint">
             <span class="gesture-icon">✌️</span>
-            <span>Hi (2 ngón): Chọn</span>
+            <span>P2: Chọn</span>
         </div>
         <div class="gesture-hint">
             <span class="gesture-icon">🤏</span>
-            <span>Pinch: Zoom/Vào</span>
+            <span>Pinch: Zoom+</span>
         </div>
         <div class="gesture-hint">
             <span class="gesture-icon">✊</span>
-            <span>Nắm đấm: Quay lại</span>
+            <span>Đấm: Zoom-</span>
+        </div>
+        <div class="gesture-hint">
+            <span class="gesture-icon">🖖</span>
+            <span>3 ngón: Quay</span>
         </div>
     </div>
 
@@ -1307,14 +1315,18 @@
             return fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky;
         }
 
+        // ==========================================
+        // PROCESS HANDS - NEW TWO-HAND SYSTEM
+        // ==========================================
         function processHands(results) {
             leftHand = null;
             rightHand = null;
 
+            // Phân biệt tay trái/phải
             if (results.multiHandLandmarks && results.multiHandedness) {
                 results.multiHandLandmarks.forEach((landmarks, i) => {
                     const handedness = results.multiHandedness[i].label;
-                    // MediaPipe mirrors, so Left in image = Right hand in reality
+                    // MediaPipe mirrors: Left in image = Right hand in reality
                     if (handedness === 'Left') {
                         rightHand = landmarks;
                     } else {
@@ -1324,120 +1336,175 @@
             }
 
             let statusText = '';
-            const cursor = document.getElementById('virtual-cursor');
 
-            // Get any available hand for gestures
-            const anyHand = rightHand || leftHand;
-
-            // ==========================================
-            // FIST GESTURE (any hand) - Zoom out OR Exit detail view
-            // ==========================================
-            if (anyHand && isFist(anyHand)) {
-                if (isInDetailView) {
-                    exitDetailView();
-                    statusText = `✊ Đã thoát khỏi chi tiết`;
-                } else {
-                    currentZoom = Math.max(CONFIG.zoomMin, currentZoom - 0.02);
-                    statusText = `✊ Thu nhỏ: ${(currentZoom * 100).toFixed(0)}%`;
-                }
-            }
-
-            // Skip other gestures if in detail view (except fist)
-            if (isInDetailView) {
-                if (statusText) {
-                    document.getElementById('status').textContent = statusText;
-                }
-                return;
-            }
-
-            // ==========================================
-            // PINCH GESTURE (any hand) - Zoom OR Enter detail view
-            // ==========================================
-            if (anyHand) {
-                const pinchDist = getPinchDistance(anyHand);
-
-                if (pinchDist < 0.06) {
-                    // Pinching
-                    if (selectedNode && selectedNode.content) {
-                        // Node selected - open detail view
-                        const fullNode = timelineData.nodes.find(n => n.id === selectedNode.id);
-                        if (fullNode) {
-                            openDetailView(fullNode);
-                            statusText = `🤏 Mở chi tiết: ${fullNode.label}`;
-                        }
-                    } else {
-                        // No node selected - zoom in
-                        currentZoom = Math.min(CONFIG.zoomMax, currentZoom + 0.02);
-                        statusText = `🤏 Zoom in: ${(currentZoom * 100).toFixed(0)}%`;
-                    }
-                }
-            }
-
-            // ==========================================
-            // OPEN HAND (any hand, 5 fingers) - Pan/Move
-            // ==========================================
-            if (anyHand && isOpenHand(anyHand)) {
-                const palmX = anyHand[9].x;
-                const palmY = anyHand[9].y;
-
-                if (prevPanPos) {
-                    const deltaX = (prevPanPos.x - palmX) * 300;
-                    const deltaY = (palmY - prevPanPos.y) * 200;
-                    panOffset.x += deltaX;
-                    panOffset.y += deltaY;
-                }
-
-                prevPanPos = { x: palmX, y: palmY };
-                isPanning = true;
-                statusText = `🖐 Di chuyển: X=${panOffset.x.toFixed(0)}, Y=${panOffset.y.toFixed(0)}`;
+            // Xử lý tay trái - PAN
+            if (leftHand) {
+                statusText = handleLeftHand(leftHand) || statusText;
             } else {
                 prevPanPos = null;
-                isPanning = false;
             }
 
-            // ==========================================
-            // RIGHT HAND ONLY - Cursor and Selection (Hi gesture)
-            // ==========================================
+            // Xử lý tay phải - CURSOR + ACTIONS
             if (rightHand) {
-                const fingers = countExtendedFingers(rightHand);
-                const indexTip = rightHand[8];
-
-                // Convert to screen coordinates (mirrored)
-                const screenX = (1 - indexTip.x) * window.innerWidth;
-                const screenY = indexTip.y * window.innerHeight;
-
-                // Update virtual cursor (RIGHT HAND ONLY)
-                if (cursorEnabled) {
-                    cursorX = screenX;
-                    cursorY = screenY;
-                    cursor.style.left = cursorX + 'px';
-                    cursor.style.top = cursorY + 'px';
-                    cursor.classList.toggle('active', !!hoveredNode);
-                }
-
-                // Check node hover (RIGHT HAND controls cursor)
-                checkNodeHover(screenX, screenY);
-
-                // "Hi" gesture: index + middle extended, ring + pinky closed
-                if (fingers.index && fingers.middle && !fingers.ring && !fingers.pinky) {
-                    if (hoveredNode) {
-                        selectedNode = hoveredNode;
-                        showNodeInfo(selectedNode);
-                        statusText = `✌️ Đã chọn: ${selectedNode.label}`;
-                    } else {
-                        statusText = `✌️ Đang chọn... (di chuyển đến node)`;
-                    }
-                }
+                statusText = handleRightHand(rightHand) || statusText;
             }
 
-            // ==========================================
-            // UPDATE STATUS
-            // ==========================================
+            // Cập nhật status
             if (statusText) {
                 document.getElementById('status').textContent = statusText;
             } else if (!leftHand && !rightHand) {
                 document.getElementById('status').textContent = 'Đưa tay vào camera để điều khiển';
             }
+        }
+
+        // ==========================================
+        // XỬ LÝ TAY TRÁI - PAN
+        // ==========================================
+        function handleLeftHand(landmarks) {
+            const fingers = countExtendedFingers(landmarks);
+            const openFingers = Object.values(fingers).filter(Boolean).length;
+
+            // Xòe tay (4-5 ngón) → Pan
+            if (openFingers >= 4) {
+                const palm = landmarks[9]; // Lòng bàn tay
+
+                if (prevPanPos) {
+                    const deltaX = (prevPanPos.x - palm.x) * 300;
+                    const deltaY = (palm.y - prevPanPos.y) * 200;
+                    panOffset.x += deltaX;
+                    panOffset.y += deltaY;
+                }
+
+                prevPanPos = { x: palm.x, y: palm.y };
+                return '👈 TAY TRÁI: DI CHUYỂN';
+            } else {
+                prevPanPos = null;
+            }
+            return '';
+        }
+
+        // ==========================================
+        // XỬ LÝ TAY PHẢI - CURSOR + ACTIONS
+        // ==========================================
+        function handleRightHand(landmarks) {
+            const thumb = landmarks[4];
+            const index = landmarks[8];
+            const middle = landmarks[12];
+            const ring = landmarks[16];
+            const pinky = landmarks[20];
+
+            const fingers = {
+                index: index.y < landmarks[6].y,
+                middle: middle.y < landmarks[10].y,
+                ring: ring.y < landmarks[14].y,
+                pinky: pinky.y < landmarks[18].y
+            };
+
+            const openFingers = Object.values(fingers).filter(Boolean).length;
+            const pinchDist = Math.hypot(thumb.x - index.x, thumb.y - index.y);
+
+            // 5. 3 NGÓN → Quay lại (ưu tiên cao nhất)
+            if (fingers.index && fingers.middle && fingers.ring && !fingers.pinky) {
+                if (isInDetailView) {
+                    exitDetailView();
+                    return '🖖 3 NGÓN: THOÁT CHI TIẾT';
+                }
+                return '🖖 3 NGÓN: QUAY LẠI';
+            }
+
+            // 4. NẮM ĐẤM → Zoom OUT
+            if (openFingers === 0) {
+                currentZoom = Math.max(CONFIG.zoomMin, currentZoom - 0.02);
+                return `✊ NẮM ĐẤM: ZOOM OUT (${(currentZoom * 100).toFixed(0)}%)`;
+            }
+
+            // 3. PINCH → Zoom IN
+            if (pinchDist < 0.05) {
+                currentZoom = Math.min(CONFIG.zoomMax, currentZoom + 0.02);
+                return `🤏 PINCH: ZOOM IN (${(currentZoom * 100).toFixed(0)}%)`;
+            }
+
+            // 2. 2 NGÓN → Chọn/Vào node
+            if (fingers.index && fingers.middle && !fingers.ring && !fingers.pinky) {
+                return selectOrEnterNode();
+            }
+
+            // 1. NGÓN TRỎ → Di chuyển cursor (luôn hoạt động)
+            if (fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky) {
+                moveCursor(index);
+                return '☝️ NGÓN TRỎ: DI CHUYỂN CURSOR';
+            }
+
+            // Nếu có ngón trỏ duỗi (bất kể cử chỉ nào), vẫn cập nhật cursor
+            if (fingers.index) {
+                moveCursor(index);
+            }
+
+            return '';
+        }
+
+        // ==========================================
+        // DI CHUYỂN CURSOR ẢO
+        // ==========================================
+        function moveCursor(indexFingerLandmark) {
+            const cursor = document.getElementById('virtual-cursor');
+
+            // Tự động bật cursor khi dùng ngón trỏ
+            if (!cursorEnabled) {
+                cursorEnabled = true;
+                cursor.style.display = 'block';
+            }
+
+            // Chuyển đổi tọa độ (mirrored)
+            const x = (1 - indexFingerLandmark.x) * window.innerWidth;
+            const y = indexFingerLandmark.y * window.innerHeight;
+
+            cursor.style.left = x + 'px';
+            cursor.style.top = y + 'px';
+
+            // Lưu vị trí để dùng cho selection
+            cursorX = x;
+            cursorY = y;
+
+            // Kiểm tra hover node
+            checkNodeHover(x, y);
+            cursor.classList.toggle('active', !!hoveredNode);
+        }
+
+        // ==========================================
+        // CHỌN HOẶC VÀO NODE
+        // ==========================================
+        function selectOrEnterNode() {
+            if (!cursorX || !cursorY) {
+                return '✌️ 2 NGÓN: DI CHUYỂN CURSOR ĐẾN NODE';
+            }
+
+            // Chuyển đổi vị trí cursor sang tọa độ 3D
+            const rect = renderer.domElement.getBoundingClientRect();
+            const x = (cursorX / rect.width) * 2 - 1;
+            const y = -(cursorY / rect.height) * 2 + 1;
+
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera({ x, y }, camera);
+            const intersects = raycaster.intersectObjects(nodeMeshes);
+
+            if (intersects.length > 0) {
+                const node = intersects[0].object.userData;
+
+                if (isInDetailView) {
+                    // Trong detail view: có thể chọn sub-node (logic tùy chỉnh sau)
+                    return '✌️ 2 NGÓN: TRONG CHI TIẾT';
+                } else {
+                    // Ngoài: vào detail view
+                    const fullNode = timelineData.nodes.find(n => n.id === node.id);
+                    if (fullNode && fullNode.content) {
+                        openDetailView(fullNode);
+                        return `✌️ 2 NGÓN: MỞ "${fullNode.label}"`;
+                    }
+                }
+            }
+
+            return '✌️ 2 NGÓN: KHÔNG CÓ NODE';
         }
 
         function checkNodeHover(screenX, screenY) {
