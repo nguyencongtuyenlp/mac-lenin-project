@@ -19,10 +19,11 @@
             padding: 0;
             box-sizing: border-box;
         }
-        /* 🎨 THAY ĐỔI MÀU NỀN (BACKGROUND) */
+
+        /* 🎨 NỀN SỬ THI (EPIC HISTORICAL BACKGROUND) */
         body {
             overflow: hidden;
-            background: linear-gradient(135deg, #8B0000 0%, #D32F2F 50%, #8B0000 100%);
+            background: radial-gradient(circle at center, #450a0a 0%, #1a0505 85%);
             font-family: 'Segoe UI', 'Arial', sans-serif;
             color: white;
         }
@@ -33,6 +34,22 @@
             position: fixed;
             top: 0;
             left: 0;
+        }
+
+        /* Lớp phủ ảnh nền trang trí */
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.12;
+            z-index: 1;
+            background-image: url('./nen.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
 
         /* UI Header */
@@ -50,54 +67,54 @@
         }
 
         #title {
-            font-size: 24px;
-            font-weight: 300;
-            letter-spacing: 3px;
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            background: linear-gradient(90deg, #FFD700, #FF6B6B, #4ECDC4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #FFD700;
+            text-shadow: 0 0 20px rgba(255, 204, 0, 0.6), 0 0 40px rgba(255, 204, 0, 0.3);
         }
 
         /* Camera Preview */
         #camera-preview {
-            width: 200px;
-            height: 150px;
-            border: 2px solid rgba(255, 215, 0, 0.5);
-            border-radius: 12px;
+            width: 180px;
+            height: 120px;
+            border: 2px solid #FFD700;
+            border-radius: 10px;
             transform: scaleX(-1);
-            opacity: 0.9;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2), inset 0 0 20px rgba(0, 0, 0, 0.5);
-            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 25px rgba(255, 204, 0, 0.4), inset 0 0 15px rgba(0, 0, 0, 0.7);
+            background: #000;
         }
 
-        /* Bottom Controls */
+        /* Bottom Controls - Glassmorphism */
         #controls {
             position: absolute;
-            bottom: 30px;
+            bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 30px;
+            gap: 35px;
             z-index: 100;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 15px 30px;
+            background: rgba(68, 17, 17, 0.75);
+            padding: 15px 45px;
             border-radius: 50px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 204, 0, 0.25);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 204, 0, 0.1);
         }
 
         .gesture-hint {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.7);
+            gap: 10px;
+            font-size: 13px;
+            color: #ddd;
+            font-weight: 500;
         }
 
         .gesture-icon {
-            font-size: 20px;
+            font-size: 22px;
+            color: #FFD700;
         }
 
         /* Start Button */
@@ -106,66 +123,71 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #8B0000 0%, #B30000 100%);
             color: white;
-            border: none;
-            padding: 20px 60px;
-            font-size: 18px;
-            font-weight: 600;
-            letter-spacing: 2px;
+            border: 2px solid #FFD700;
+            padding: 20px 50px;
+            font-size: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
             border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
-            transition: all 0.3s ease;
+            box-shadow: 0 0 40px rgba(179, 0, 0, 0.5), 0 0 20px rgba(255, 204, 0, 0.3);
+            transition: all 0.4s;
             z-index: 200;
         }
 
         #btnStart:hover {
             transform: translate(-50%, -50%) scale(1.05);
-            box-shadow: 0 15px 50px rgba(102, 126, 234, 0.6);
+            box-shadow: 0 0 60px rgba(255, 204, 0, 0.6);
+            background: #B30000;
         }
 
         /* Status Display */
         #status {
             position: absolute;
-            bottom: 100px;
+            bottom: 120px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.6);
-            padding: 10px 25px;
-            border-radius: 25px;
-            font-size: 14px;
-            color: #4ECDC4;
+            background: rgba(0, 0, 0, 0.75);
+            padding: 8px 25px;
+            border-radius: 30px;
+            font-size: 13px;
+            color: #FFD700;
+            border: 1px solid rgba(255, 204, 0, 0.3);
             z-index: 100;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(10px);
         }
 
         /* Node Info Panel */
         #node-info {
             position: absolute;
-            top: 100px;
-            left: 30px;
-            background: rgba(20, 20, 40, 0.9);
-            padding: 20px 25px;
+            top: 120px;
+            left: 40px;
+            background: rgba(68, 17, 17, 0.85);
+            padding: 25px;
             border-radius: 15px;
-            min-width: 250px;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            min-width: 280px;
+            border-left: 5px solid #FFD700;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 204, 0, 0.2);
             z-index: 100;
             display: none;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
         }
 
         #node-info h3 {
             color: #FFD700;
-            margin-bottom: 10px;
-            font-weight: 400;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            font-size: 18px;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
         }
 
         #node-info p {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 13px;
-            line-height: 1.6;
+            color: #EEEEEE;
+            font-size: 14px;
+            line-height: 1.7;
         }
 
         /* Debug Panel */
@@ -200,14 +222,14 @@
         /* Virtual Cursor */
         #virtual-cursor {
             position: fixed;
-            width: 30px;
-            height: 30px;
+            width: 35px;
+            height: 35px;
             border: 3px solid #FFD700;
             border-radius: 50%;
             pointer-events: none;
             z-index: 500;
             transform: translate(-50%, -50%);
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), inset 0 0 10px rgba(255, 215, 0, 0.3);
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.7), inset 0 0 10px rgba(255, 204, 0, 0.3);
             transition: all 0.05s ease-out;
             display: none;
         }
@@ -222,6 +244,7 @@
             background: #FFD700;
             border-radius: 50%;
             transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.8);
         }
 
         #virtual-cursor.active {
@@ -232,29 +255,32 @@
         /* Toggle Cursor Button */
         #btn-toggle-cursor {
             position: absolute;
-            top: 15px;
-            left: 250px;
-            background: rgba(40, 40, 60, 0.9);
-            color: white;
-            border: 1px solid rgba(255, 215, 0, 0.5);
-            padding: 10px 20px;
-            border-radius: 25px;
+            top: 25px;
+            left: 320px;
+            background: rgba(0, 0, 0, 0.5);
+            color: #FFD700;
+            border: 1px solid rgba(255, 204, 0, 0.3);
+            padding: 8px 20px;
+            border-radius: 20px;
             cursor: pointer;
             font-size: 13px;
+            font-weight: 600;
             z-index: 150;
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
         }
 
         #btn-toggle-cursor:hover {
-            background: rgba(60, 60, 80, 0.95);
+            background: rgba(68, 17, 17, 0.7);
             border-color: #FFD700;
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.3);
         }
 
         #btn-toggle-cursor.active {
-            background: rgba(255, 215, 0, 0.2);
+            background: rgba(255, 204, 0, 0.15);
             border-color: #FFD700;
             color: #FFD700;
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.4);
         }
 
         /* ==========================================
@@ -442,6 +468,8 @@
 
 <body>
     <div id="canvas-container"></div>
+    <!-- Lớp phủ ảnh nền trang trí -->
+    <div class="bg-overlay"></div>
 
     <!-- Header -->
     <div id="header">
@@ -905,9 +933,10 @@
             starCanvas.width = 64; starCanvas.height = 64;
             const ctx = starCanvas.getContext('2d');
             const grd = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-            grd.addColorStop(0, '#FFFFFF');
-            grd.addColorStop(0.3, '#FFFFCC');
-            grd.addColorStop(1, 'rgba(255,255,200,0)');
+            grd.addColorStop(0, '#FFFFE0');
+            grd.addColorStop(0.3, '#FFD700');
+            grd.addColorStop(0.7, '#FF8C00');
+            grd.addColorStop(1, 'rgba(255,140,0,0)');
             ctx.fillStyle = grd;
             ctx.fillRect(0, 0, 64, 64);
 
@@ -916,6 +945,7 @@
                 size: 2,
                 map: starTex,
                 transparent: true,
+                opacity: 0.7,
                 blending: THREE.AdditiveBlending,
                 depthWrite: false
             });
