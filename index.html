@@ -1392,9 +1392,13 @@
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.z = 150;
 
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true,
+                powerPreference: 'high-performance'
+            });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
             container.appendChild(renderer.domElement);
 
             // Create main group for timeline (for pan/zoom)
@@ -1402,13 +1406,15 @@
             scene.add(timelineGroup);
 
             // Create elements
-            // createBackgroundStars(); // Bỏ hạt nền
-            // createParticleSystem(); // Bỏ hạt chính
             createTimeline();
             createNodes();
             createConnections();
 
-            animate();
+            // Only start loop if not already running
+            if (!window.animationLoopStarted) {
+                window.animationLoopStarted = true;
+                animate();
+            }
         }
 
         // ==========================================
@@ -1739,12 +1745,28 @@
         // ==========================================
         // 9. ANIMATION LOOP
         // ==========================================
+        let lastTime = 0;
+        const targetFPS = 60;
+        const frameInterval = 1000 / targetFPS;
+
         function animate() {
             requestAnimationFrame(animate);
-            const time = Date.now() * 0.001;
 
-            // Animate background stars
-            if (bgStars) {
+            // FPS limiting
+            const currentTime = Date.now();
+            const elapsed = currentTime - lastTime;
+
+            if (elapsed < frameInterval) return;
+            lastTime = currentTime - (elapsed % frameInterval);
+
+            // PERFORMANCE: Skip all logic and rendering if 3D view is hidden
+            const container = document.getElementById('canvas-container');
+            if (!container || container.style.display === 'none') return;
+
+            const time = currentTime * 0.001;
+
+            // Animate background stars (Only loop if exists)
+            if (bgStars && bgStars.parent) {
                 bgStars.rotation.y += 0.0002;
                 const starSizes = bgStars.geometry.attributes.size.array;
                 const starPhases = bgStars.geometry.userData.phases;
@@ -1754,20 +1776,18 @@
                 bgStars.geometry.attributes.size.needsUpdate = true;
             }
 
-            // Animate main particles
-            if (particleSystem) {
+            // Animate main particles (Only loop if exists)
+            if (particleSystem && particleSystem.parent) {
                 const positions = particleSystem.geometry.attributes.position.array;
                 const phases = particleSystem.geometry.userData.phases;
                 const velocities = particleSystem.geometry.userData.velocities;
 
                 for (let i = 0; i < positions.length; i += 3) {
                     const idx = i / 3;
-                    // Floating motion
                     positions[i] += velocities[idx * 3] * 0.5;
                     positions[i + 1] += Math.sin(time + phases[idx]) * 0.1;
                     positions[i + 2] += velocities[idx * 3 + 2] * 0.3;
 
-                    // Wrap around
                     if (positions[i] > CONFIG.timelineLength) positions[i] = -CONFIG.timelineLength;
                     if (positions[i] < -CONFIG.timelineLength) positions[i] = CONFIG.timelineLength;
                 }
@@ -1776,14 +1796,14 @@
 
             // Animate node particles
             Object.values(nodeParticles).forEach(particles => {
+                if (!particles.parent) return; // Skip if removed from scene
+
                 const positions = particles.geometry.attributes.position.array;
                 const phases = particles.geometry.userData.phases;
-                const original = particles.geometry.userData.originalPositions;
                 const nodeData = particles.geometry.userData.nodeData;
 
                 for (let i = 0; i < positions.length; i += 3) {
                     const idx = i / 3;
-                    // Orbit motion around node
                     const angle = time * 0.5 + phases[idx];
                     const radius = 15 + Math.sin(time * 2 + phases[idx]) * 5;
                     positions[i] = nodeData.x + Math.cos(angle + idx * 0.1) * radius;
@@ -1793,14 +1813,14 @@
                 particles.geometry.attributes.position.needsUpdate = true;
 
                 // Highlight if selected
-                if (selectedNode && selectedNode.id === particles.geometry.userData.nodeData.id) {
+                if (selectedNode && selectedNode.id === nodeData.id) {
                     particles.material.opacity = 0.9;
                 } else {
                     particles.material.opacity = 0.4;
                 }
             });
 
-            // Animate node rings
+            // Animate node rings - Use simple rotation
             nodeMeshes.forEach(mesh => {
                 if (mesh.userData.ring) {
                     mesh.userData.ring.rotation.z += 0.01;
@@ -1814,7 +1834,7 @@
                 }
             });
 
-            // Apply zoom and pan
+            // Apply zoom and pan with simple lerping
             timelineGroup.scale.set(currentZoom, currentZoom, currentZoom);
             timelineGroup.position.x += (panOffset.x - timelineGroup.position.x) * 0.1;
             timelineGroup.position.y += (panOffset.y - timelineGroup.position.y) * 0.1;
