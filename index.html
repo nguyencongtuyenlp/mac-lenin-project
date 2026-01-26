@@ -572,14 +572,11 @@
         #node-cards-wrapper {
             display: flex;
             align-items: center;
-            justify-content: flex-start;
-            /* Changed from center for sliding */
+            justify-content: center;
             gap: 40px;
             flex: 1;
-            max-width: none;
-            /* Remove max-width for sliding */
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            transform: translateX(0);
+            max-width: 1400px;
+            transition: none;
         }
 
         .node-card {
@@ -1635,7 +1632,7 @@
                     // Tham số thứ 3 (0.3) là ĐỘ DÀY (Radius). Chỉnh to/nhỏ ở đây.
                     const tubeGeometry = new THREE.TubeGeometry(curve, 32, 0.3, 8, false);
 
-                    // Material tùy chỉnh để tạo hiệu ứng thon dần (Tapered) và phát sáng
+                    // Material với hiệu ứng phát sáng (không làm biến dạng hình dạng)
                     const material = new THREE.ShaderMaterial({
                         uniforms: {
                             color: { value: new THREE.Color(0xFFD700) }
@@ -1644,34 +1641,29 @@
                             varying vec2 vUv;
                             void main() {
                                 vUv = uv;
-                                // Thon 2 đầu, dày giữa: peak at center (uv.x = 0.5)
-                                float centerDist = abs(uv.x - 0.5) * 2.0; // 0 at center, 1 at edges
-                                float taper = 1.0 - centerDist; // 1 at center, 0 at edges
-                                taper = pow(taper, 0.6); // Smooth curve
-                                taper = 0.15 + 0.85 * taper; // Min 15%, max 100%
-                                vec3 transformed = position * taper;
-                                gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
+                                // Giữ nguyên position, không transform
+                                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
                             }
                         `,
                         fragmentShader: `
                             varying vec2 vUv;
                             uniform vec3 color;
                             void main() {
-                                // Glow effect: bright at center, dim at edges
+                                // Glow effect: thon 2 đầu bằng opacity (không biến dạng shape)
                                 float centerGlow = 1.0 - abs(vUv.x - 0.5) * 2.0;
-                                centerGlow = pow(centerGlow, 0.5);
+                                centerGlow = pow(centerGlow, 0.3);
                                 
                                 // Side glow for tube appearance
                                 float sideGlow = 1.0 - abs(vUv.y - 0.5) * 2.0;
-                                sideGlow = pow(sideGlow, 1.5);
+                                sideGlow = pow(sideGlow, 0.8);
                                 
                                 float totalGlow = centerGlow * sideGlow;
-                                gl_FragColor = vec4(color, 0.3 + 0.7 * totalGlow);
+                                gl_FragColor = vec4(color, 0.4 + 0.6 * totalGlow);
                             }
                         `,
                         transparent: true,
                         side: THREE.DoubleSide,
-                        blending: THREE.AdditiveBlending // Tạo hiệu ứng cộng sáng
+                        blending: THREE.AdditiveBlending
                     });
 
                     const mesh = new THREE.Mesh(tubeGeometry, material);
@@ -2117,30 +2109,37 @@
 
         function updateCarouselScale() {
             const cards = document.querySelectorAll('.node-card');
-            const wrapper = document.getElementById('node-cards-wrapper');
 
-            // Calculate card width + gap
-            const cardWidth = cards[0] ? cards[0].offsetWidth : 400;
-            const gap = 40;
-            const totalWidth = cardWidth + gap;
-
-            // Calculate offset to center current card
-            const containerWidth = document.getElementById('node-cards-container').offsetWidth;
-            const centerOffset = (containerWidth / 2) - (cardWidth / 2);
-            const slideOffset = centerOffset - (currentCardIndex * totalWidth);
-
-            // Apply sliding transform
-            wrapper.style.transform = `translateX(${slideOffset}px)`;
-
-            // Update card classes for scaling
             cards.forEach((card, index) => {
+                // Remove all classes
                 card.classList.remove('center', 'side');
-                card.style.display = 'block'; // Show all cards for sliding
 
-                if (index === currentCardIndex) {
+                // Calculate relative position to current card
+                let relativePos = index - currentCardIndex;
+
+                // Wrap around for circular effect
+                if (relativePos > totalCards / 2) {
+                    relativePos -= totalCards;
+                } else if (relativePos < -totalCards / 2) {
+                    relativePos += totalCards;
+                }
+
+                // Apply classes and visibility based on position
+                if (relativePos === 0) {
                     card.classList.add('center');
-                } else if (Math.abs(index - currentCardIndex) === 1) {
+                    card.style.order = 2;
+                    card.style.display = 'block';
+                } else if (relativePos === -1) {
                     card.classList.add('side');
+                    card.style.order = 1;
+                    card.style.display = 'block';
+                } else if (relativePos === 1) {
+                    card.classList.add('side');
+                    card.style.order = 3;
+                    card.style.display = 'block';
+                } else {
+                    card.style.order = 0;
+                    card.style.display = 'none';
                 }
             });
         }
