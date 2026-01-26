@@ -1698,6 +1698,9 @@
                 lastFPSUpdate = currentTime;
             }
 
+            // PERFORMANCE: Skip all logic and rendering if 3D view is hidden
+            if (!DOM.canvasContainer || DOM.canvasContainer.style.display === 'none') return;
+
             // REMOVED: bgStars and particleSystem dead code (never created)
             // This saves 2-3ms per frame by eliminating unnecessary checks
 
