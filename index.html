@@ -588,7 +588,7 @@
             transform: translate(-50%, -50%);
             display: none;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             width: 100vw;
             height: 100vh;
             z-index: 50;
@@ -611,8 +611,13 @@
         }
 
         .node-card {
-            min-width: calc(33.333vw - 100px);
-            max-width: calc(33.333vw - 100px);
+            /* GROK FIX: Use fixed width for stable calculation */
+            width: 280px;
+            height: 400px;
+            /* Fixed height */
+            flex-shrink: 0;
+            /* Prevent squeezing */
+
             background: rgba(68, 17, 17, 0.9);
             border: 3px solid #FFD700;
             border-radius: 20px;
@@ -2170,8 +2175,7 @@
             const container = document.getElementById('node-cards-container');
 
             // Offset with center compensation (GROK's formula)
-            const offset = -currentCardIndex * (cardWidth + gap) + (container.clientWidth / 2 - cardWidth / 2);
-
+            const offset = -currentCardIndex * (cardWidth + gap) + (document.getElementById('node-cards-container').clientWidth / 2 - cardWidth / 2);
             // Apply slide transform
             wrapper.style.transform = `translateX(${offset}px)`;
 
