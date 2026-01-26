@@ -600,7 +600,8 @@
         #node-cards-wrapper {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
+            /* GROK FIX: Don't auto-center, use translateX instead */
             gap: 40px;
             flex: 1;
             max-width: 1400px;
@@ -2163,14 +2164,13 @@
 
             if (!wrapper || cards.length === 0) return;
 
-            // CRITICAL FIX: Simple centered carousel logic
-            // Calculate how much to slide based on current index
+            // GROK FIX: Proper center calculation
             const cardWidth = cards[0].offsetWidth || 500;
             const gap = 40; // from CSS
+            const container = document.getElementById('node-cards-container');
 
-            // Offset = slide left by (index * (width + gap))
-            // This ensures card at currentCardIndex is always centered
-            const offset = -currentCardIndex * (cardWidth + gap);
+            // Offset with center compensation (GROK's formula)
+            const offset = -currentCardIndex * (cardWidth + gap) + (container.clientWidth / 2 - cardWidth / 2);
 
             // Apply slide transform
             wrapper.style.transform = `translateX(${offset}px)`;
