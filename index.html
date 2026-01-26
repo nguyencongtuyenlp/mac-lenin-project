@@ -1827,8 +1827,13 @@
             // 5. 3 NGÓN → Quay lại (ưu tiên cao nhất)
             if (fingers.index && fingers.middle && fingers.ring && !fingers.pinky) {
                 if (isInDetailView) {
+                    // Trong detail view → Quay về timeline
                     exitDetailView();
                     return '🖖 3 NGÓN: THOÁT CHI TIẾT';
+                } else if (currentActiveCard !== null) {
+                    // Trong timeline view → Quay về carousel
+                    exitTimelineView();
+                    return '🖖 3 NGÓN: QUAY VỀ CAROUSEL';
                 }
                 return '🖖 3 NGÓN: QUAY LẠI';
             }
@@ -1957,6 +1962,7 @@
         // ==========================================
         let controlMode = null; // 'gesture' or 'mouse'
         let currentCardIndex = 0;
+        let currentActiveCard = null; // Track which card's timeline is active
         const totalCards = 7;
 
         function startGestureMode() {
@@ -2075,16 +2081,58 @@
             visibleCards.forEach(card => card.style.display = 'block');
         }
 
-        function selectCard(nodeId) {
-            const node = timelineData.nodes.find(n => n.id === nodeId);
-            if (node && node.content) {
-                openDetailView(node);
-            }
+        function selectCard(cardId) {
+            console.log('Selecting card:', cardId);
+
+            // Ẩn carousel
+            document.getElementById('node-cards-container').style.display = 'none';
+
+            // Hiện 3D canvas với timeline
+            document.getElementById('canvas-container').style.display = 'block';
+
+            // Hiện header
+            document.getElementById('header').style.display = 'flex';
+
+            // Cập nhật title theo card
+            const cardTitles = {
+                1: "Khởi đầu",
+                2: "Thử thách",
+                3: "Kinh nghiệm",
+                4: "Thực tiễn",
+                5: "Thế giới quan",
+                6: "Nhận thức",
+                7: "Đích đến"
+            };
+
+            document.getElementById('title').textContent = `☭ ${cardTitles[cardId] || 'TRIẾT HỌC MARX-LENIN'}`;
+
+            // Lưu current card
+            currentActiveCard = cardId;
+
+            // Load timeline cho card này (sẽ dùng data hiện tại)
+            // Timeline nodes sẽ hiển thị như cũ
+            console.log('Timeline view active for card:', cardId);
         }
 
         function enableMouseControls() {
             // Mouse controls already work via onclick handlers
             console.log('Mouse mode enabled');
+        }
+
+        function exitTimelineView() {
+            console.log('Exiting timeline view, returning to carousel');
+
+            // Ẩn 3D canvas
+            document.getElementById('canvas-container').style.display = 'none';
+
+            // Ẩn header
+            document.getElementById('header').style.display = 'none';
+
+            // Hiện lại carousel
+            document.getElementById('node-cards-container').style.display = 'flex';
+
+            // Reset current card
+            currentActiveCard = null;
         }
 
         // ==========================================
