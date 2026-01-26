@@ -584,15 +584,16 @@
         #node-cards-container {
             position: fixed;
             top: 50%;
-            left: 0;
-            right: 0;
-            transform: translateY(-50%);
+            left: 50%;
+            transform: translate(-50%, -50%);
             display: none;
             align-items: center;
             justify-content: center;
-            gap: 30px;
-            padding: 0 80px;
+            width: 100vw;
+            height: 100vh;
             z-index: 50;
+            overflow: hidden;
+            /* Prevent scrollbars (from Grok) */
         }
 
 
@@ -2210,13 +2211,13 @@
 
             // Cập nhật title theo card
             const cardTitles = {
-                1: "Khởi đầu",
-                2: "Thử thách",
-                3: "Kinh nghiệm",
-                4: "Thực tiễn",
-                5: "Thế giới quan",
-                6: "Nhận thức",
-                7: "Đích đến"
+                1: "Trước 1848: Bối cảnh ra đời",
+                2: "1840s – 1850s: Ra đời Chủ nghĩa Marx",
+                3: "1860s - 1890s: Hoàn thiện lý thuyết",
+                4: "1900s - 1920s: Chủ nghĩa Mác phát triển thành Mác – Lênin",
+                5: "1950s - 1980s: Chiến tranh Lạnh và mở rộng",
+                6: "1980s - 1990s: Suy thoái",
+                7: "2000s - Hiện tại (2026)"
             };
 
             document.getElementById('title').textContent = `☭ ${cardTitles[cardId] || 'TRIẾT HỌC MARX-LENIN'}`;
@@ -2392,7 +2393,7 @@
             if (hoveredNode) {
                 selectedNode = hoveredNode;
                 showNodeInfo(selectedNode);
-                document.getElementById('status').textContent = `🖱️ Đã chọn: ${selectedNode.label}`;
+                document.getElementById('status').textContent = `Đã chọn: ${selectedNode.label}`;
             } else {
                 isMouseDragging = true;
                 document.body.style.cursor = 'grabbing';
@@ -2418,7 +2419,7 @@
                     animateNodeZoom(nodeMesh, () => {
                         openDetailView(fullNode);
                     });
-                    document.getElementById('status').textContent = `🖱️ Mở chi tiết: ${fullNode.label}`;
+                    document.getElementById('status').textContent = `Mở chi tiết: ${fullNode.label}`;
                 }
             }
         });
@@ -2430,7 +2431,7 @@
             e.preventDefault();
             const zoomDelta = e.deltaY > 0 ? -0.05 : 0.05;
             currentZoom = Math.max(CONFIG.zoomMin, Math.min(CONFIG.zoomMax, currentZoom + zoomDelta));
-            document.getElementById('status').textContent = `🖱️ Zoom: ${(currentZoom * 100).toFixed(0)}%`;
+            document.getElementById('status').textContent = `Zoom: ${(currentZoom * 100).toFixed(0)}%`;
         }, { passive: false });
 
         // Right click - exit detail view or reset
@@ -2444,7 +2445,28 @@
                 currentZoom = 1.0;
                 selectedNode = null;
                 document.getElementById('node-info').style.display = 'none';
-                document.getElementById('status').textContent = '🖱️ Đã reset vị trí';
+                document.getElementById('status').textContent = 'Đã reset vị trí';
+            }
+        });
+
+        // ==========================================
+        // KEYBOARD NAVIGATION (Inspired by Grok)
+        // ==========================================
+        document.addEventListener('keydown', (e) => {
+            // Only work when carousel is visible
+            const carouselVisible = document.getElementById('node-cards-container').style.display === 'flex';
+            if (!carouselVisible) return;
+
+            if (e.key === 'ArrowLeft' || e.keyCode === 37) {
+                e.preventDefault();
+                navigateCards(-1); // Previous card
+            } else if (e.key === 'ArrowRight' || e.keyCode === 39) {
+                e.preventDefault();
+                navigateCards(1); // Next card
+            } else if (e.key === 'Enter' && currentCardIndex >= 0) {
+                e.preventDefault();
+                // Select current active card
+                selectCard(currentCardIndex + 1); // +1 because cards are 1-indexed
             }
         });
     </script>
