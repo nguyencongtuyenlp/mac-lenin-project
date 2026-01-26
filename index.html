@@ -604,7 +604,9 @@
             gap: 40px;
             flex: 1;
             max-width: 1400px;
-            transition: none;
+            /* GROK-INSPIRED: Smooth slide animation */
+            transition: transform 1s ease-in-out;
+            transform: translateX(0);
         }
 
         .node-card {
@@ -2152,7 +2154,23 @@
         }
 
         function updateCarouselScale() {
+            const wrapper = document.getElementById('node-cards-wrapper');
             const cards = document.querySelectorAll('.node-card');
+
+            if (!wrapper || cards.length === 0) return;
+
+            // GROK-INSPIRED: Calculate slide offset
+            // Get card width + gap
+            const cardWidth = cards[0].offsetWidth || 500; // fallback
+            const gap = 40; // from CSS
+            const slideOffset = currentCardIndex * (cardWidth + gap);
+
+            // Center the carousel by offsetting
+            const containerWidth = window.innerWidth;
+            const centerOffset = containerWidth / 2 - (cardWidth / 2);
+
+            // Apply smooth slide transform
+            wrapper.style.transform = `translateX(${centerOffset - slideOffset}px)`;
 
             cards.forEach((card, index) => {
                 // Remove all classes
@@ -2189,18 +2207,36 @@
         }
 
         function selectCard(cardId) {
-            console.log('Selecting card:', cardId);
+            console.log('\n🎯 ========== selectCard CALLED ==========');
+            console.log('📌 Card ID:', cardId);
+            console.log('📊 isInit3DCompleted:', isInit3DCompleted);
+            console.log('🔍 Scene exists:', !!scene);
+            console.log('🔍 Renderer exists:', !!renderer);
+            console.log('🔍 Camera exists:', !!camera);
+            console.log('🔍 nodeMeshes count:', nodeMeshes.length);
+            console.log('🔍 DOM.canvasContainer:', !!DOM.canvasContainer);
+
+            // CRITICAL: Ensure DOM cache is initialized
+            if (!DOM.canvasContainer) {
+                console.warn('❌ DOM cache not initialized! Calling cacheDOMElements()...');
+                cacheDOMElements();
+            }
 
             // CRITICAL: Ensure 3D is initialized before showing canvas
             if (!isInit3DCompleted) {
                 console.log('⚠️ 3D not initialized yet, initializing now...');
                 init3D();
+                console.log('✅ init3D() completed');
+                console.log('🔍 After init - Scene:', !!scene);
+                console.log('🔍 After init - nodeMeshes:', nodeMeshes.length);
             }
 
             // Ẩn carousel
+            console.log('👁️ Hiding carousel...');
             document.getElementById('node-cards-container').style.display = 'none';
 
             // Hiện 3D canvas với timeline
+            console.log('👁️ Showing canvas...');
             document.getElementById('canvas-container').style.display = 'block';
 
             // Hiện header
@@ -2225,10 +2261,22 @@
             // Lưu current card
             currentActiveCard = cardId;
 
-            // Load timeline cho card này (sẽ dùng data hiện tại)
-            // Timeline nodes sẽ hiển thị như cũ
-            console.log('Timeline view active for card:', cardId);
-            console.log('Nodes should be visible now. Check console for init3D logs.');
+            // Force a render to ensure scene is visible
+            if (renderer && scene && camera) {
+                console.log('🎨 Forcing initial render...');
+                renderer.render(scene, camera);
+                console.log('✅ Render complete');
+            } else {
+                console.error('❌ Cannot render! Missing:',
+                    !renderer ? 'renderer' : '',
+                    !scene ? 'scene' : '',
+                    !camera ? 'camera' : '');
+            }
+
+            // Log final state
+            console.log('📍 Timeline view active for card:', cardId);
+            console.log('🔍 Final check - Nodes in scene:', nodeMeshes.filter(m => m.parent === timelineGroup).length);
+            console.log('========== selectCard END ==========\n');
         }
 
         function enableMouseControls() {
