@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Timeline - Hand Gesture Control</title>
+    <title>TRIẾT HỌC MARX-LENIN</title>
 
     <!-- Three.js & MediaPipe -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -465,21 +465,438 @@
             font-size: 13px;
             z-index: 350;
         }
+
+        /* ==========================================
+           WELCOME SCREEN
+           ========================================== */
+        #welcome-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #welcome-container {
+            text-align: center;
+            max-width: 900px;
+            padding: 40px;
+        }
+
+        #welcome-title {
+            font-size: 56px;
+            color: #FFD700;
+            margin-bottom: 15px;
+            text-shadow: 0 0 40px rgba(255, 204, 0, 0.7);
+            font-weight: 800;
+            letter-spacing: 3px;
+        }
+
+        #welcome-subtitle {
+            font-size: 20px;
+            color: #ddd;
+            margin-bottom: 60px;
+            letter-spacing: 2px;
+        }
+
+        #welcome-options {
+            display: flex;
+            gap: 50px;
+            justify-content: center;
+        }
+
+        .welcome-btn {
+            flex: 1;
+            max-width: 350px;
+            padding: 50px 40px;
+            background: rgba(68, 17, 17, 0.8);
+            border: 3px solid #FFD700;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.4s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .welcome-btn:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 25px 70px rgba(255, 204, 0, 0.5);
+            background: rgba(68, 17, 17, 1);
+            border-color: #FFD700;
+        }
+
+        .btn-icon {
+            font-size: 72px;
+            display: block;
+        }
+
+        .btn-text {
+            font-size: 26px;
+            color: #FFD700;
+            font-weight: 700;
+            display: block;
+        }
+
+        .btn-desc {
+            font-size: 15px;
+            color: #bbb;
+            display: block;
+        }
+
+        /* ==========================================
+           CAROUSEL CARD LAYOUT
+           ========================================== */
+        #node-cards-container {
+            position: fixed;
+            top: 50%;
+            left: 0;
+            right: 0;
+            transform: translateY(-50%);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            padding: 0 80px;
+            z-index: 50;
+        }
+
+        #node-cards-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            flex: 1;
+            max-width: 1400px;
+        }
+
+        .node-card {
+            min-width: calc(33.333vw - 100px);
+            max-width: calc(33.333vw - 100px);
+            background: rgba(68, 17, 17, 0.9);
+            border: 3px solid #FFD700;
+            border-radius: 20px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0.6;
+            transform: scale(0.85);
+        }
+
+        .node-card.center {
+            transform: scale(1.15);
+            opacity: 1;
+            box-shadow: 0 30px 80px rgba(255, 204, 0, 0.6);
+            border-width: 4px;
+            z-index: 10;
+        }
+
+        .node-card.side {
+            transform: scale(0.85);
+            opacity: 0.6;
+        }
+
+        .node-card:hover {
+            border-color: #FFD700;
+        }
+
+        .card-image {
+            width: 100%;
+            aspect-ratio: 4/3;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-content {
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .card-title {
+            font-size: 28px;
+            color: #FFD700;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .card-desc {
+            font-size: 16px;
+            color: #ddd;
+            line-height: 1.6;
+        }
+
+        .nav-arrow {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 204, 0, 0.15);
+            border: 3px solid #FFD700;
+            border-radius: 50%;
+            color: #FFD700;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .nav-arrow:hover {
+            background: rgba(255, 204, 0, 0.35);
+            transform: scale(1.15);
+            box-shadow: 0 0 30px rgba(255, 204, 0, 0.5);
+        }
+
+        .nav-arrow:active {
+            transform: scale(0.95);
+        }
+
+        /* ==========================================
+           VERTICAL GESTURE PANEL (Right Side)
+           ========================================== */
+        #gesture-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 150;
+        }
+
+        #gesture-panel #camera-preview {
+            width: 220px;
+            height: 165px;
+        }
+
+        #controls-vertical {
+            background: rgba(68, 17, 17, 0.9);
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 204, 0, 0.3);
+            backdrop-filter: blur(15px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        #controls-vertical .gesture-hint {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: #ddd;
+        }
+
+        #controls-vertical .gesture-hint:last-child {
+            margin-bottom: 0;
+        }
+
+        #controls-vertical .gesture-icon {
+            font-size: 18px;
+            color: #FFD700;
+            min-width: 25px;
+            text-align: center;
+        }
+
+        #gesture-panel #btn-toggle-cursor {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 204, 0, 0.3);
+            border-radius: 12px;
+            color: #FFD700;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        #gesture-panel #btn-toggle-cursor:hover {
+            background: rgba(68, 17, 17, 0.8);
+            border-color: #FFD700;
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.3);
+        }
     </style>
 </head>
 
 <body>
+    <!-- Welcome Screen -->
+    <div id="welcome-overlay">
+        <div id="welcome-container">
+            <h1 id="welcome-title">☭ TRIẾT HỌC MARX-LENIN</h1>
+            <p id="welcome-subtitle">Khám phá dòng chảy lịch sử</p>
+
+            <div id="welcome-options">
+                <button class="welcome-btn" onclick="startGestureMode()">
+                    <span class="btn-icon">🖐</span>
+                    <span class="btn-text">Trải nghiệm cử chỉ tay</span>
+                    <span class="btn-desc">Điều khiển bằng camera</span>
+                </button>
+
+                <button class="welcome-btn" onclick="startMouseMode()">
+                    <span class="btn-icon">🖱️</span>
+                    <span class="btn-text">Dùng con trỏ</span>
+                    <span class="btn-desc">Điều khiển bằng chuột</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="canvas-container"></div>
     <!-- Lớp phủ ảnh nền trang trí -->
     <div class="bg-overlay"></div>
 
     <!-- Header -->
-    <div id="header">
-        <div id="title">☭ TRIẾT HỌC MAC-LENIN</div>
+    <div id="header" style="display: none;">
+        <div id="title">☭ TRIẾT HỌC MARX-LENIN</div>
         <canvas id="camera-preview"></canvas>
     </div>
 
-    <!-- Toggle Cursor Button -->
+    <!-- Carousel Cards Container -->
+    <div id="node-cards-container">
+        <button class="nav-arrow" onclick="navigateCards(-1)">
+            <span>◀</span>
+        </button>
+
+        <div id="node-cards-wrapper">
+            <div class="node-card" data-node-id="1" onclick="selectCard(1)">
+                <div class="card-image">
+                    <div
+                        style="width:100%;height:100%;background:linear-gradient(135deg,#8B0000,#D32F2F);display:flex;align-items:center;justify-content:center;font-size:48px;">
+                        ☭</div>
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Khởi đầu</h3>
+                    <p class="card-desc">Chủ nghĩa Mác: Lý luận cách mạng</p>
+                </div>
+            </div>
+
+            <div class="node-card" data-node-id="2" onclick="selectCard(2)">
+                <div class="card-image">
+                    <div
+                        style="width:100%;height:100%;background:linear-gradient(135deg,#B30000,#FF6B6B);display:flex;align-items:center;justify-content:center;font-size:48px;">
+                        ⚒️</div>
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Thử thách</h3>
+                    <p class="card-desc">Đấu tranh giai cấp & Cách mạng Công nghiệp</p>
+                </div>
+            </div>
+
+            <div class="node-card" data-node-id="3" onclick="selectCard(3)">
+                <div class="card-image">
+                    <div
+                        style="width:100%;height:100%;background:linear-gradient(135deg,#FFD700,#FFA500);display:flex;align-items:center;justify-content:center;font-size:48px;">
+                        📚</div>
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Kinh nghiệm</h3>
+                    <p class="card-desc">Cách mạng Tháng Mười & Xây dựng XHCN</p>
+                </div>
+            </div>
+
+            <div class="node-card" data-node-id="4" onclick="selectCard(4)">
+                <div class="card-image">
+                    <div
+                        style="width:100%;height:100%;background:linear-gradient(135deg,#4ECDC4,#44A08D);display:flex;align-items:center;justify-content:center;font-size:48px;">
+                        🌏</div>
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Thực tiễn</h3>
+                    <p class="card-desc">Thực tiễn Việt Nam</p>
+                </div>
+            </div>
+
+            <div class="node-card" data-node-id="5" onclick="selectCard(5)">
+                <div class="card-image">
+                    <div
+                        style="width:100%;height:100%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:48px;">
+                        🎓</div>
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Thế giới quan</h3>
+                    <p class="card-desc">Chủ nghĩa duy vật biện chứng</p>
+                </div>
+            </div>
+
+            <div class="node-card" data-node-id="6" onclick="selectCard(6)">
+                <div class="card-image">
+                    <div
+                        style="width:100%;height:100%;background:linear-gradient(135deg,#f093fb,#f5576c);display:flex;align-items:center;justify-content:center;font-size:48px;">
+                        💡</div>
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Nhận thức</h3>
+                    <p class="card-desc">Chủ nghĩa duy vật lịch sử</p>
+                </div>
+            </div>
+
+            <div class="node-card" data-node-id="7" onclick="selectCard(7)">
+                <div class="card-image">
+                    <div
+                        style="width:100%;height:100%;background:linear-gradient(135deg,#fa709a,#fee140);display:flex;align-items:center;justify-content:center;font-size:48px;">
+                        🚩</div>
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Đích đến</h3>
+                    <p class="card-desc">Chủ nghĩa Cộng sản: Thế giới đại đồng</p>
+                </div>
+            </div>
+        </div>
+
+        <button class="nav-arrow" onclick="navigateCards(1)">
+            <span>▶</span>
+        </button>
+    </div>
+
+    <!-- Vertical Gesture Panel (Right Side) -->
+    <div id="gesture-panel">
+        <canvas id="camera-preview"></canvas>
+
+        <div id="controls-vertical">
+            <div class="gesture-hint">
+                <span class="gesture-icon">👈</span>
+                <span>Trái: Di chuyển</span>
+            </div>
+            <div class="gesture-hint">
+                <span class="gesture-icon">☝️</span>
+                <span>P1: Cursor</span>
+            </div>
+            <div class="gesture-hint">
+                <span class="gesture-icon">✌️</span>
+                <span>P2: Chọn</span>
+            </div>
+            <div class="gesture-hint">
+                <span class="gesture-icon">🤏</span>
+                <span>Pinch: Zoom+</span>
+            </div>
+            <div class="gesture-hint">
+                <span class="gesture-icon">✊</span>
+                <span>Đấm: Zoom-</span>
+            </div>
+            <div class="gesture-hint">
+                <span class="gesture-icon">🖖</span>
+                <span>3 ngón: Quay</span>
+            </div>
+        </div>
+
+        <button id="btn-toggle-cursor" onclick="toggleCursor()">👆 Con trỏ: Tắt</button>
+    </div>
+
+    <!-- Toggle Cursor Button (Old - will be hidden) -->
+    <button id="btn-toggle-cursor-old" onclick="toggleCursor()" style="display: none;">👆 Con trỏ: Tắt</button>
     <button id="btn-toggle-cursor" onclick="toggleCursor()">👆 Con trỏ: Tắt</button>
 
     <!-- Virtual Cursor -->
@@ -1529,6 +1946,132 @@
             document.getElementById('node-title').textContent = node.label;
             document.getElementById('node-desc').textContent = node.desc;
             infoPanel.style.display = 'block';
+        }
+
+        // ==========================================
+        // CAROUSEL & MODE SWITCHING
+        // ==========================================
+        let controlMode = null; // 'gesture' or 'mouse'
+        let currentCardIndex = 0;
+        const totalCards = 7;
+
+        function startGestureMode() {
+            controlMode = 'gesture';
+
+            // Ẩn welcome screen
+            document.getElementById('welcome-overlay').style.display = 'none';
+
+            // Hiện gesture panel
+            document.getElementById('gesture-panel').style.display = 'flex';
+
+            // Hiện node cards
+            document.getElementById('node-cards-container').style.display = 'flex';
+
+            // Ẩn old UI elements
+            document.getElementById('btnStart').style.display = 'none';
+            document.getElementById('controls').style.display = 'none';
+
+            // Initialize carousel
+            updateCarouselScale();
+
+            // Khởi động camera và 3D
+            startSystem();
+        }
+
+        function startMouseMode() {
+            controlMode = 'mouse';
+
+            // Ẩn welcome screen
+            document.getElementById('welcome-overlay').style.display = 'none';
+
+            // Ẩn gesture panel
+            document.getElementById('gesture-panel').style.display = 'none';
+
+            // Hiện node cards
+            document.getElementById('node-cards-container').style.display = 'flex';
+
+            // Ẩn old UI elements
+            document.getElementById('btnStart').style.display = 'none';
+            document.getElementById('controls').style.display = 'none';
+            document.getElementById('header').style.display = 'none';
+
+            // Initialize carousel
+            updateCarouselScale();
+
+            // Bật mouse controls
+            enableMouseControls();
+
+            // Initialize 3D (without camera)
+            init3D();
+        }
+
+        function navigateCards(direction) {
+            currentCardIndex += direction;
+
+            // Wrap around
+            if (currentCardIndex < 0) {
+                currentCardIndex = totalCards - 1;
+            } else if (currentCardIndex >= totalCards) {
+                currentCardIndex = 0;
+            }
+
+            updateCarouselScale();
+        }
+
+        function updateCarouselScale() {
+            const cards = document.querySelectorAll('.node-card');
+
+            cards.forEach((card, index) => {
+                // Remove all classes
+                card.classList.remove('center', 'side');
+
+                // Calculate relative position to current card
+                let relativePos = index - currentCardIndex;
+
+                // Wrap around for circular effect
+                if (relativePos > totalCards / 2) {
+                    relativePos -= totalCards;
+                } else if (relativePos < -totalCards / 2) {
+                    relativePos += totalCards;
+                }
+
+                // Apply classes based on position
+                if (relativePos === 0) {
+                    card.classList.add('center');
+                    card.style.order = 2;
+                } else if (relativePos === -1) {
+                    card.classList.add('side');
+                    card.style.order = 1;
+                } else if (relativePos === 1) {
+                    card.classList.add('side');
+                    card.style.order = 3;
+                } else {
+                    card.style.order = 0;
+                    card.style.display = 'none';
+                }
+            });
+
+            // Show only 3 cards
+            const visibleCards = Array.from(cards).filter((card, index) => {
+                let relativePos = index - currentCardIndex;
+                if (relativePos > totalCards / 2) relativePos -= totalCards;
+                else if (relativePos < -totalCards / 2) relativePos += totalCards;
+                return Math.abs(relativePos) <= 1;
+            });
+
+            visibleCards.forEach(card => card.style.display = 'block');
+        }
+
+        function selectCard(nodeId) {
+            const node = timelineData.nodes.find(n => n.id === nodeId);
+            if (node && node.content) {
+                openDetailView(node);
+            }
+        }
+
+        function enableMouseControls() {
+            // Mouse controls already work via onclick handlers
+            console.log('Mouse mode enabled');
         }
 
         // ==========================================
