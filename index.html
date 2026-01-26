@@ -2141,15 +2141,19 @@
         }
 
         function navigateCards(direction) {
-            currentCardIndex += direction;
+            const newIndex = currentCardIndex + direction;
 
-            // Wrap around
-            if (currentCardIndex < 0) {
-                currentCardIndex = totalCards - 1;
-            } else if (currentCardIndex >= totalCards) {
-                currentCardIndex = 0;
+            // BOUNDARY CHECK: Stop at first/last card (no wrap around)
+            if (newIndex < 0) {
+                console.log('⚠️ Đã đến card đầu tiên, không thể lùi thêm!');
+                return; // Don't go before first card
+            }
+            if (newIndex >= totalCards) {
+                console.log('⚠️ Đã đến card cuối cùng, không thể tiến thêm!');
+                return; // Don't go past last card
             }
 
+            currentCardIndex = newIndex;
             updateCarouselScale();
         }
 
@@ -2159,18 +2163,19 @@
 
             if (!wrapper || cards.length === 0) return;
 
-            // GROK-INSPIRED: Calculate slide offset
-            // Get card width + gap
-            const cardWidth = cards[0].offsetWidth || 500; // fallback
+            // CRITICAL FIX: Simple centered carousel logic
+            // Calculate how much to slide based on current index
+            const cardWidth = cards[0].offsetWidth || 500;
             const gap = 40; // from CSS
-            const slideOffset = currentCardIndex * (cardWidth + gap);
 
-            // Center the carousel by offsetting
-            const containerWidth = window.innerWidth;
-            const centerOffset = containerWidth / 2 - (cardWidth / 2);
+            // Offset = slide left by (index * (width + gap))
+            // This ensures card at currentCardIndex is always centered
+            const offset = -currentCardIndex * (cardWidth + gap);
 
-            // Apply smooth slide transform
-            wrapper.style.transform = `translateX(${centerOffset - slideOffset}px)`;
+            // Apply slide transform
+            wrapper.style.transform = `translateX(${offset}px)`;
+
+            console.log(`🎯 Carousel: Card ${currentCardIndex + 1}/${totalCards}, offset: ${offset}px`);
 
             cards.forEach((card, index) => {
                 // Remove all classes
@@ -2179,28 +2184,14 @@
                 // Calculate relative position to current card
                 let relativePos = index - currentCardIndex;
 
-                // Wrap around for circular effect
-                if (relativePos > totalCards / 2) {
-                    relativePos -= totalCards;
-                } else if (relativePos < -totalCards / 2) {
-                    relativePos += totalCards;
-                }
-
-                // Apply classes and visibility based on position
+                // Apply classes based on position
                 if (relativePos === 0) {
                     card.classList.add('center');
-                    card.style.order = 2;
                     card.style.display = 'block';
-                } else if (relativePos === -1) {
+                } else if (relativePos === -1 || relativePos === 1) {
                     card.classList.add('side');
-                    card.style.order = 1;
-                    card.style.display = 'block';
-                } else if (relativePos === 1) {
-                    card.classList.add('side');
-                    card.style.order = 3;
                     card.style.display = 'block';
                 } else {
-                    card.style.order = 0;
                     card.style.display = 'none';
                 }
             });
