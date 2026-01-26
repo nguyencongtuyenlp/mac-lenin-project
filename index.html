@@ -568,13 +568,18 @@
             z-index: 50;
         }
 
+
         #node-cards-wrapper {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
+            /* Changed from center for sliding */
             gap: 40px;
             flex: 1;
-            max-width: 1400px;
+            max-width: none;
+            /* Remove max-width for sliding */
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(0);
         }
 
         .node-card {
@@ -1201,6 +1206,40 @@
         let lastDetailOpenTime = 0;
         const DETAIL_COOLDOWN_MS = 1500; // 1.5 seconds cooldown
 
+        // Animate node zoom before opening detail view
+        function animateNodeZoom(nodeMesh, callback) {
+            if (!nodeMesh) {
+                callback();
+                return;
+            }
+
+            const startScale = nodeMesh.scale.x;
+            const endScale = startScale * 2.5;
+            const duration = 500; // ms
+            const startTime = Date.now();
+
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+
+                // Easing: easeOutCubic for smooth deceleration
+                const eased = 1 - Math.pow(1 - progress, 3);
+
+                const scale = startScale + (endScale - startScale) * eased;
+                nodeMesh.scale.set(scale, scale, scale);
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Reset scale and call callback
+                    nodeMesh.scale.set(startScale, startScale, startScale);
+                    callback();
+                }
+            }
+
+            animate();
+        }
+
         function openDetailView(node) {
             if (!node || !node.content) return;
 
@@ -1605,9 +1644,11 @@
                             varying vec2 vUv;
                             void main() {
                                 vUv = uv;
-                                // uv.x chạy từ 0 (Bắt đầu) đến 1 (Kết thúc)
-                                // Làm cho đầu đường (uv.x thấp) nhỏ hơn
-                                float taper = 0.1 + 0.9 * uv.x; 
+                                // Thon 2 đầu, dày giữa: peak at center (uv.x = 0.5)
+                                float centerDist = abs(uv.x - 0.5) * 2.0; // 0 at center, 1 at edges
+                                float taper = 1.0 - centerDist; // 1 at center, 0 at edges
+                                taper = pow(taper, 0.6); // Smooth curve
+                                taper = 0.15 + 0.85 * taper; // Min 15%, max 100%
                                 vec3 transformed = position * taper;
                                 gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
                             }
@@ -1616,10 +1657,16 @@
                             varying vec2 vUv;
                             uniform vec3 color;
                             void main() {
-                                // Hiệu ứng mờ dần ở hai đầu và viền
-                                float alpha = smoothstep(0.0, 0.2, vUv.x) * smoothstep(1.0, 0.8, vUv.x);
+                                // Glow effect: bright at center, dim at edges
+                                float centerGlow = 1.0 - abs(vUv.x - 0.5) * 2.0;
+                                centerGlow = pow(centerGlow, 0.5);
+                                
+                                // Side glow for tube appearance
                                 float sideGlow = 1.0 - abs(vUv.y - 0.5) * 2.0;
-                                gl_FragColor = vec4(color, 0.3 + 0.7 * sideGlow * alpha);
+                                sideGlow = pow(sideGlow, 1.5);
+                                
+                                float totalGlow = centerGlow * sideGlow;
+                                gl_FragColor = vec4(color, 0.3 + 0.7 * totalGlow);
                             }
                         `,
                         transparent: true,
@@ -1948,10 +1995,14 @@
                     // Trong detail view: có thể chọn sub-node (logic tùy chỉnh sau)
                     return '✌️ 2 NGÓN: TRONG CHI TIẾT';
                 } else {
-                    // Ngoài: vào detail view
+                    // Ngoài: vào detail view với animation
                     const fullNode = timelineData.nodes.find(n => n.id === node.id);
                     if (fullNode && fullNode.content) {
-                        openDetailView(fullNode);
+                        // Find mesh and animate
+                        const nodeMesh = nodeMeshes.find(m => m.userData.id === fullNode.id);
+                        animateNodeZoom(nodeMesh, () => {
+                            openDetailView(fullNode);
+                        });
                         return `✌️ 2 NGÓN: MỞ "${fullNode.label}"`;
                     }
                 }
@@ -2066,46 +2117,32 @@
 
         function updateCarouselScale() {
             const cards = document.querySelectorAll('.node-card');
+            const wrapper = document.getElementById('node-cards-wrapper');
 
+            // Calculate card width + gap
+            const cardWidth = cards[0] ? cards[0].offsetWidth : 400;
+            const gap = 40;
+            const totalWidth = cardWidth + gap;
+
+            // Calculate offset to center current card
+            const containerWidth = document.getElementById('node-cards-container').offsetWidth;
+            const centerOffset = (containerWidth / 2) - (cardWidth / 2);
+            const slideOffset = centerOffset - (currentCardIndex * totalWidth);
+
+            // Apply sliding transform
+            wrapper.style.transform = `translateX(${slideOffset}px)`;
+
+            // Update card classes for scaling
             cards.forEach((card, index) => {
-                // Remove all classes
                 card.classList.remove('center', 'side');
+                card.style.display = 'block'; // Show all cards for sliding
 
-                // Calculate relative position to current card
-                let relativePos = index - currentCardIndex;
-
-                // Wrap around for circular effect
-                if (relativePos > totalCards / 2) {
-                    relativePos -= totalCards;
-                } else if (relativePos < -totalCards / 2) {
-                    relativePos += totalCards;
-                }
-
-                // Apply classes based on position
-                if (relativePos === 0) {
+                if (index === currentCardIndex) {
                     card.classList.add('center');
-                    card.style.order = 2;
-                } else if (relativePos === -1) {
+                } else if (Math.abs(index - currentCardIndex) === 1) {
                     card.classList.add('side');
-                    card.style.order = 1;
-                } else if (relativePos === 1) {
-                    card.classList.add('side');
-                    card.style.order = 3;
-                } else {
-                    card.style.order = 0;
-                    card.style.display = 'none';
                 }
             });
-
-            // Show only 3 cards
-            const visibleCards = Array.from(cards).filter((card, index) => {
-                let relativePos = index - currentCardIndex;
-                if (relativePos > totalCards / 2) relativePos -= totalCards;
-                else if (relativePos < -totalCards / 2) relativePos += totalCards;
-                return Math.abs(relativePos) <= 1;
-            });
-
-            visibleCards.forEach(card => card.style.display = 'block');
         }
 
         function selectCard(cardId) {
@@ -2286,7 +2323,11 @@
             if (selectedNode && selectedNode.content) {
                 const fullNode = timelineData.nodes.find(n => n.id === selectedNode.id);
                 if (fullNode) {
-                    openDetailView(fullNode);
+                    // Find mesh and animate
+                    const nodeMesh = nodeMeshes.find(m => m.userData.id === fullNode.id);
+                    animateNodeZoom(nodeMesh, () => {
+                        openDetailView(fullNode);
+                    });
                     document.getElementById('status').textContent = `🖱️ Mở chi tiết: ${fullNode.label}`;
                 }
             }
