@@ -1034,8 +1034,8 @@
         // 1. CONFIGURATION
         // ==========================================
         const CONFIG = {
-            particleCount: 2000,
-            nodeParticleCount: 200,
+            particleCount: 1000,
+            nodeParticleCount: 100,
             timelineLength: 300,
             branchSpacing: 40,
             nodeRadius: 8,
@@ -1746,7 +1746,7 @@
         // 9. ANIMATION LOOP
         // ==========================================
         let lastTime = 0;
-        const targetFPS = 60;
+        const targetFPS = 30;
         const frameInterval = 1000 / targetFPS;
 
         function animate() {
