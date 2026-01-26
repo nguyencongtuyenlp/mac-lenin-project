@@ -2166,6 +2166,12 @@
         function selectCard(cardId) {
             console.log('Selecting card:', cardId);
 
+            // CRITICAL: Ensure 3D is initialized before showing canvas
+            if (!isInit3DCompleted) {
+                console.log('⚠️ 3D not initialized yet, initializing now...');
+                init3D();
+            }
+
             // Ẩn carousel
             document.getElementById('node-cards-container').style.display = 'none';
 
@@ -2197,6 +2203,7 @@
             // Load timeline cho card này (sẽ dùng data hiện tại)
             // Timeline nodes sẽ hiển thị như cũ
             console.log('Timeline view active for card:', cardId);
+            console.log('Nodes should be visible now. Check console for init3D logs.');
         }
 
         function enableMouseControls() {
