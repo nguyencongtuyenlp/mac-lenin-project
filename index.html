@@ -1035,7 +1035,7 @@
         // ==========================================
         const CONFIG = {
             particleCount: 1000,
-            nodeParticleCount: 100,
+            nodeParticleCount: 50,  // Giảm từ 100 → 50 (giảm 50% tính toán)
             timelineLength: 300,
             branchSpacing: 40,
             nodeRadius: 8,
@@ -1749,6 +1749,9 @@
         const targetFPS = 30;
         const frameInterval = 1000 / targetFPS;
 
+        // Cache Vector3 to avoid garbage collection
+        const cachedVector3 = new THREE.Vector3(1, 1, 1);
+
         function animate() {
             requestAnimationFrame(animate);
 
@@ -1829,7 +1832,9 @@
                         mesh.scale.set(1.2, 1.2, 1.2);
                     } else {
                         mesh.userData.ring.material.opacity = 0.3;
-                        mesh.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+                        // Sử dụng cached Vector3 thay vì tạo mới
+                        cachedVector3.set(1, 1, 1);
+                        mesh.scale.lerp(cachedVector3, 0.1);
                     }
                 }
             });
@@ -2118,6 +2123,11 @@
         let currentActiveCard = null; // Track which card's timeline is active
         const totalCards = 7;
 
+        // MediaPipe global instances
+        let handsInstance = null;
+        let cameraInstance = null;
+        let isMediaPipeRunning = false;
+
         function startGestureMode() {
             controlMode = 'gesture';
 
@@ -2143,8 +2153,9 @@
             // Initialize carousel
             updateCarouselScale();
 
-            // Khởi động camera và 3D
+            // Khởi động 3D và MediaPipe
             startSystem();
+            startMediaPipe(); // ← BẬT MediaPipe cho gesture mode
         }
 
         function startMouseMode() {
@@ -2175,6 +2186,9 @@
 
             // Initialize 3D (without camera)
             init3D();
+
+            // TẮT MediaPipe để tiết kiệm CPU
+            stopMediaPipe();
         }
 
         function navigateCards(direction) {
@@ -2299,28 +2313,28 @@
         // ==========================================
         // 11. START SYSTEM
         // ==========================================
-        function startSystem() {
-            document.getElementById('btnStart').style.display = 'none';
-            document.getElementById('status').textContent = 'Đang khởi động camera...';
-
-            init3D();
+        // Start MediaPipe (only for gesture mode)
+        function startMediaPipe() {
+            if (isMediaPipeRunning) return;
 
             const video = document.querySelector('.input_video');
             const canvas = document.getElementById('camera-preview');
             const ctx = canvas.getContext('2d');
 
-            const hands = new Hands({
+            handsInstance = new Hands({
                 locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
             });
 
-            hands.setOptions({
+            handsInstance.setOptions({
                 maxNumHands: 2,
-                modelComplexity: 1,
+                modelComplexity: 0,  // Giảm từ 1 → 0 (nhanh hơn 30-40%)
                 minDetectionConfidence: 0.7,
                 minTrackingConfidence: 0.5
             });
 
-            hands.onResults((results) => {
+            handsInstance.onResults((results) => {
+                if (!isMediaPipeRunning) return; // Skip if stopped
+
                 // Draw camera preview
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
@@ -2341,17 +2355,39 @@
                 processHands(results);
             });
 
-            const cameraUtils = new Camera(video, {
+            cameraInstance = new Camera(video, {
                 onFrame: async () => {
-                    await hands.send({ image: video });
+                    if (isMediaPipeRunning && handsInstance) {
+                        await handsInstance.send({ image: video });
+                    }
                 },
-                width: 640,
-                height: 480
+                width: 320,  // Giảm từ 640 → 320 (75% ít pixel hơn)
+                height: 240  // Giảm từ 480 → 240
             });
 
-            cameraUtils.start().then(() => {
+            cameraInstance.start().then(() => {
+                isMediaPipeRunning = true;
                 document.getElementById('status').textContent = 'Sẵn sàng! Đưa tay vào camera';
             });
+        }
+
+        // Stop MediaPipe (save CPU)
+        function stopMediaPipe() {
+            isMediaPipeRunning = false;
+
+            if (cameraInstance) {
+                cameraInstance.stop();
+            }
+
+            if (handsInstance) {
+                handsInstance.close();
+            }
+        }
+
+        function startSystem() {
+            document.getElementById('btnStart').style.display = 'none';
+            init3D();
+            // MediaPipe sẽ chỉ start khi chọn Gesture Mode
         }
 
         // ==========================================
