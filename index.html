@@ -583,18 +583,17 @@
            ========================================== */
         #node-cards-container {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: none;
+            inset: 0;
+            /* phủ toàn màn hình */
+            display: flex;
             align-items: center;
             justify-content: center;
             width: 100vw;
             height: 100vh;
             z-index: 50;
             overflow: hidden;
-            /* Prevent scrollbars (from Grok) */
         }
+
 
 
         #node-cards-wrapper {
