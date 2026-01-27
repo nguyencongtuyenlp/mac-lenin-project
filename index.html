@@ -1610,10 +1610,13 @@
             }
         }
 
+
+
         // ==========================================
         // XỬ LÝ TAY TRÁI - PAN
         // ==========================================
         function handleLeftHand(landmarks) {
+            // Unused legacy function, keeping as placeholder or removing
             return '';
         }
 
@@ -1636,9 +1639,11 @@
             // 5. 3 NGÓN → Quay lại (ưu tiên cao nhất)
             if (fingers.index && fingers.middle && fingers.ring && !fingers.pinky) {
                 if (isInDetailView) {
+                    // Trong detail view → Quay về timeline
                     exitDetailView();
                     return '🖖 3 NGÓN: THOÁT CHI TIẾT';
                 } else if (currentActiveCard !== null) {
+                    // Trong timeline view → Quay về carousel
                     exitTimelineView();
                     return '🖖 3 NGÓN: QUAY VỀ CAROUSEL';
                 }
@@ -1662,7 +1667,6 @@
 
             return '';
         }
-
         function handleLeftDetail(landmarks) {
             if (!isOpenHand(landmarks)) return;
 
@@ -1674,9 +1678,8 @@
 
             const dy = palm.y - prevPanPos.y;
             const container = document.getElementById('detail-container');
-            if (container) {
-                container.scrollTop += dy * 1200;
-            }
+
+            container.scrollTop += dy * 1200;
 
             prevPanPos = palm;
         }
@@ -1696,6 +1699,8 @@
             prevPanPos = palm;
         }
 
+
+
         // ==========================================
         // XỬ LÝ TAY TRÁI - CAROUSEL (SWIPE)
         // ==========================================
@@ -1706,7 +1711,7 @@
             const openFingers = Object.values(fingers).filter(Boolean).length;
 
             if (openFingers >= 4 || (fingers.index && !fingers.pinky)) {
-                const palm = landmarks[9];
+                const palm = landmarks[9]; // Middle finger MCP (center of palm approx)
 
                 if (prevPanPos) {
                     const dx = palm.x - prevPanPos.x;
@@ -1730,33 +1735,44 @@
             return '';
         }
 
-        // ==========================================
-        // EVENT LISTENERS & ANIMATION HELPERS
-        // ==========================================
+        // ...
 
         // Task 2: Zoom Limit
-        const MIN_ZOOM = 0.5;
-        const MAX_ZOOM = 3.0;
+        // In animate loop or where loop is handled
+        // Actually, zoom is handled in 'wheel' event listeners or gesture zoom
+        // Let's modify the wheel listener and add constraints
 
-        // Note: Using a named function to prevent duplicate listeners if re-run
-        function handleGlobalWheel(e) {
-            if (isInDetailView) return;
+        // Add this helper function somewhere or modify existing `initCarouselControls` wheel logic?
+        // Wait, zoom is for 3D timeline.
+        // Let's look for `document.addEventListener('wheel', ...)` for 3D zoom.
+
+        // FOUND IT: It's likely in init3D or global listeners.
+        // Let's add strict zoom limits.
+
+        // Global variable for currentZoom is already there.
+
+        const MIN_ZOOM = 0.5; // Zoom out limit (adjust based on timeline length)
+        const MAX_ZOOM = 3.0; // Zoom in limit
+
+        document.addEventListener('wheel', (e) => {
+            if (isInDetailView) return; // Scroll detail view instead
             if (document.getElementById('canvas-container').style.display === 'none') return;
 
             e.preventDefault();
+
             const zoomSpeed = 0.001;
             let newZoom = currentZoom - e.deltaY * zoomSpeed;
 
-            // Clamp zoom
+            // Task 2: Limit Zoom
+            // Clamp zoom to prevent seeing too much empty space
             newZoom = Math.max(MIN_ZOOM, Math.min(newZoom, MAX_ZOOM));
-            currentZoom = newZoom;
-        }
 
-        // Remove existing listener before adding (if any)
-        document.removeEventListener('wheel', handleGlobalWheel);
-        document.addEventListener('wheel', handleGlobalWheel, { passive: false });
+            currentZoom = newZoom;
+        }, { passive: false });
+
 
         // Task 3: Speed up Node Transition
+        // In animateNodeZoom function
         function animateNodeZoom(nodeMesh, callback) {
             if (!nodeMesh) {
                 callback();
@@ -1765,12 +1781,14 @@
 
             const startScale = nodeMesh.scale.x;
             const endScale = startScale * 2.5;
-            const duration = 250;
+            const duration = 250; // REDUCED FROM 500ms to 250ms (Faster!)
             const startTime = Date.now();
 
             function animate() {
                 const elapsed = Date.now() - startTime;
                 const progress = Math.min(elapsed / duration, 1);
+
+                // ... rest is same
 
                 const eased = 1 - Math.pow(1 - progress, 3);
                 const scale = startScale + (endScale - startScale) * eased;
@@ -1779,9 +1797,8 @@
                 if (progress < 1) {
                     requestAnimationFrame(animate);
                 } else {
-                    // Reset
                     nodeMesh.scale.set(startScale, startScale, startScale);
-                    if (callback) callback();
+                    callback();
                 }
             }
             animate();
