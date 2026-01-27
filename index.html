@@ -2178,6 +2178,9 @@
             document.getElementById('canvas-container').style.display = 'none';
             document.getElementById('header').style.display = 'none'; // Gesture mode uses vertical panel
 
+            // Hiện nút back ngay từ Carousel
+            document.getElementById('global-back-btn').style.display = 'block';
+
             initCarouselControls(); // Init invisible controls
             updateCarouselScale();
             startSystem();
@@ -2191,6 +2194,9 @@
             document.getElementById('node-cards-container').style.display = 'flex';
             document.getElementById('canvas-container').style.display = 'none';
             document.getElementById('header').style.display = 'none';
+
+            // Hiện nút back ngay từ Carousel
+            document.getElementById('global-back-btn').style.display = 'block';
 
             initCarouselControls(); // Init invisible controls
             updateCarouselScale();
@@ -2306,7 +2312,18 @@
             document.getElementById('canvas-container').style.display = 'block';
 
             // Hiện header
-            document.getElementById('header').style.display = 'flex';
+            const header = document.getElementById('header');
+            header.style.display = 'flex';
+
+            // LOGIC CAMERA PREVIEW:
+            // Mouse Mode -> Ẩn camera preview (cho sạch)
+            // Gesture Mode -> Hiện camera preview
+            const camPreview = document.getElementById('camera-preview');
+            if (controlMode === 'mouse') {
+                camPreview.style.display = 'none';
+            } else {
+                camPreview.style.display = 'block';
+            }
 
             // Hiện nút back
             document.getElementById('global-back-btn').style.display = 'block';
@@ -2362,11 +2379,29 @@
             // Hiện lại carousel
             document.getElementById('node-cards-container').style.display = 'flex';
 
-            // Ẩn nút back
-            document.getElementById('global-back-btn').style.display = 'none';
-
             // Reset current card
             currentActiveCard = null;
+
+            // Back button remains visible (for Carousel -> Welcome)
+            document.getElementById('global-back-btn').style.display = 'block';
+        }
+
+        function resetToWelcome() {
+            console.log('Resetting to Welcome Screen');
+            controlMode = null;
+
+            // Ẩn tất cả giao diện chính
+            document.getElementById('node-cards-container').style.display = 'none';
+            document.getElementById('canvas-container').style.display = 'none';
+            document.getElementById('gesture-panel').style.display = 'none';
+            document.getElementById('header').style.display = 'none';
+            document.getElementById('global-back-btn').style.display = 'none'; // Ẩn nút back ở welcome
+
+            // Hiện màn hình Welcome
+            document.getElementById('welcome-overlay').style.display = 'flex';
+
+            // TẮT AI/Camera hoàn toàn
+            stopMediaPipe();
         }
 
         // Global back button navigation
@@ -2375,6 +2410,9 @@
                 exitDetailView();
             } else if (currentActiveCard !== null) {
                 exitTimelineView();
+            } else {
+                // Nếu đang ở Carousel (chưa chọn card nào) -> Về Welcome
+                resetToWelcome();
             }
         }
 
