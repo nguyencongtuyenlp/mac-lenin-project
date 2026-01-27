@@ -1872,17 +1872,17 @@
 
             if (currentGestureContext === GESTURE_CONTEXT.CAROUSEL) {
                 if (leftHand) handleLeftCarousel(leftHand);
-                if (rightHand) handleRightCommon(rightHand);
+                if (rightHand) handleRightHand(rightHand);
             }
 
             else if (currentGestureContext === GESTURE_CONTEXT.DETAIL) {
                 if (leftHand) handleLeftDetail(leftHand);
-                if (rightHand) handleRightCommon(rightHand);
+                if (rightHand) handleRightHand(rightHand);
             }
 
             else if (currentGestureContext === GESTURE_CONTEXT.TIMELINE) {
                 if (leftHand) handleLeftTimeline(leftHand);
-                if (rightHand) handleRightCommon(rightHand);
+                if (rightHand) handleRightHand(rightHand);
             }
         }
 
@@ -1892,25 +1892,7 @@
         // XỬ LÝ TAY TRÁI - PAN
         // ==========================================
         function handleLeftHand(landmarks) {
-            const fingers = countExtendedFingers(landmarks);
-            const openFingers = Object.values(fingers).filter(Boolean).length;
-
-            // Xòe tay (4-5 ngón) → Pan
-            if (openFingers >= 4) {
-                const palm = landmarks[9]; // Lòng bàn tay
-
-                if (prevPanPos) {
-                    const deltaX = (prevPanPos.x - palm.x) * 300;
-                    const deltaY = (palm.y - prevPanPos.y) * 200;
-                    panOffset.x += deltaX;
-                    panOffset.y += deltaY;
-                }
-
-                prevPanPos = { x: palm.x, y: palm.y };
-                return '👈 TAY TRÁI: DI CHUYỂN';
-            } else {
-                prevPanPos = null;
-            }
+            // Unused legacy function, keeping as placeholder or removing
             return '';
         }
 
@@ -1918,7 +1900,6 @@
         // XỬ LÝ TAY PHẢI - CURSOR + ACTIONS
         // ==========================================
         function handleRightHand(landmarks) {
-            const thumb = landmarks[4];
             const index = landmarks[8];
             const middle = landmarks[12];
             const ring = landmarks[16];
@@ -1930,9 +1911,6 @@
                 ring: ring.y < landmarks[14].y,
                 pinky: pinky.y < landmarks[18].y
             };
-
-            const openFingers = Object.values(fingers).filter(Boolean).length;
-            const pinchDist = Math.hypot(thumb.x - index.x, thumb.y - index.y);
 
             // 5. 3 NGÓN → Quay lại (ưu tiên cao nhất)
             if (fingers.index && fingers.middle && fingers.ring && !fingers.pinky) {
