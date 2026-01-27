@@ -1110,7 +1110,7 @@
                     label: "Khởi đầu",
                     year: "1848",
                     desc: "Điểm xuất phát của hành trình",
-                    x: -100, y: 60, // Changed from 0 to 60
+                    x: -100, y: 0,
                     children: [2, 3],
                     color: 0xFF6B6B,
                     content: {
@@ -1126,13 +1126,97 @@
                         ]
                     }
                 },
-                // ... (Node 2, 3, 4, 5 unchanged in replacement but check context) ...
-                // ...
+                {
+                    id: 2,
+                    label: "Phát triển",
+                    year: "1867",
+                    desc: "Giai đoạn phát triển và học hỏi",
+                    x: -30, y: -50,
+                    parent: 1,
+                    children: [4],
+                    color: 0x4ECDC4,
+                    content: {
+                        description: "Giai đoạn phát triển là thời điểm biến ý tưởng thành hiện thực. Đây là lúc học hỏi các kỹ năng mới, xây dựng sản phẩm và liên tục cải tiến.",
+                        video: "https://www.youtube.com/embed/jNQXAC9IVRw",
+                        events: [
+                            { date: "03/2024", title: "Prototype v1", desc: "Hoàn thành phiên bản thử nghiệm đầu tiên" },
+                            { date: "04/2024", title: "User Testing", desc: "Thu thập feedback từ người dùng thử nghiệm" },
+                            { date: "05/2024", title: "Iteration", desc: "Cải tiến dựa trên phản hồi" }
+                        ],
+                        subNodes: [
+                            { id: "2a", label: "Coding", desc: "Viết code và xây dựng tính năng" },
+                            { id: "2b", label: "Design", desc: "Thiết kế giao diện người dùng" },
+                            { id: "2c", label: "Testing", desc: "Kiểm thử và đảm bảo chất lượng" }
+                        ]
+                    }
+                },
+                {
+                    id: 3,
+                    label: "Thử thách",
+                    year: "1917",
+                    desc: "Những khó khăn cần vượt qua",
+                    x: -30, y: 50,
+                    parent: 1,
+                    children: [5],
+                    color: 0xFFE66D,
+                    content: {
+                        description: "Không có hành trình nào mà không có thử thách. Đây là giai đoạn đối mặt với những khó khăn, học cách thích nghi và tìm ra giải pháp sáng tạo.",
+                        events: [
+                            { date: "06/2024", title: "Bug lớn", desc: "Phát hiện và sửa lỗi nghiêm trọng trong hệ thống" },
+                            { date: "07/2024", title: "Thay đổi yêu cầu", desc: "Khách hàng thay đổi yêu cầu giữa chừng" }
+                        ],
+                        subNodes: [
+                            { id: "3a", label: "Problem Solving", desc: "Phân tích và giải quyết vấn đề" },
+                            { id: "3b", label: "Adaptation", desc: "Thích nghi với thay đổi" }
+                        ]
+                    }
+                },
+                {
+                    id: 4,
+                    label: "Kiến thức",
+                    desc: "Tích lũy kiến thức và kỹ năng",
+                    x: 40, y: -80,
+                    parent: 2,
+                    children: [],
+                    color: 0x95E1D3,
+                    content: {
+                        description: "Kiến thức là tài sản quý giá nhất. Giai đoạn này tập trung vào việc học hỏi liên tục, nâng cao chuyên môn và mở rộng hiểu biết.",
+                        video: "https://www.youtube.com/embed/9bZkp7q19f0",
+                        events: [
+                            { date: "08/2024", title: "Khóa học mới", desc: "Hoàn thành khóa học nâng cao" },
+                            { date: "09/2024", title: "Chứng chỉ", desc: "Đạt được chứng chỉ chuyên môn" }
+                        ],
+                        subNodes: [
+                            { id: "4a", label: "Self-learning", desc: "Tự học qua sách và online" },
+                            { id: "4b", label: "Mentorship", desc: "Học hỏi từ người có kinh nghiệm" }
+                        ]
+                    }
+                },
+                {
+                    id: 5,
+                    label: "Kinh nghiệm",
+                    desc: "Rút ra bài học từ thử thách",
+                    x: 40, y: 80,
+                    parent: 3,
+                    children: [],
+                    color: 0xF38181,
+                    content: {
+                        description: "Kinh nghiệm đến từ việc thực hành và học hỏi từ những sai lầm. Mỗi thử thách vượt qua đều để lại những bài học quý giá.",
+                        events: [
+                            { date: "10/2024", title: "Bài học quan trọng", desc: "Nhận ra tầm quan trọng của việc lập kế hoạch" },
+                            { date: "11/2024", title: "Chia sẻ kinh nghiệm", desc: "Viết blog chia sẻ với cộng đồng" }
+                        ],
+                        subNodes: [
+                            { id: "5a", label: "Reflection", desc: "Suy ngẫm về những gì đã làm" },
+                            { id: "5b", label: "Documentation", desc: "Ghi chép lại bài học" }
+                        ]
+                    }
+                },
                 {
                     id: 6,
                     label: "Đích đến",
                     desc: "Mục tiêu cuối cùng đạt được",
-                    x: 100, y: -60, // Changed from 0 to -60
+                    x: 100, y: 0,
                     children: [],
                     color: 0xAA96DA,
                     content: {
@@ -1213,48 +1297,240 @@
         // ==========================================
         // DETAIL VIEW (Drill-down) Functions
         // ==========================================
-        // ... (Already correctly defined in next blocks, assuming correctness)
-        // CHECKING CONTEXT: The previous read showed these were here but somewhat scrambled or duplicated.
-        // Let's assume the previous `openDetailView` etc. were correct in the file content,
-        // but `createTimeline` and `createNodes` were messed up.
+        let isInDetailView = false;
+        let currentDetailNode = null;
+        let detailViewCooldown = false; // Prevent immediate exit
+        let lastDetailOpenTime = 0;
+        const DETAIL_COOLDOWN_MS = 1500; // 1.5 seconds cooldown
+
+        // Animate node zoom before opening detail view
+        function animateNodeZoom(nodeMesh, callback) {
+            if (!nodeMesh) {
+                callback();
+                return;
+            }
+
+            const startScale = nodeMesh.scale.x;
+            const endScale = startScale * 2.5;
+            const duration = 500; // ms
+            const startTime = Date.now();
+
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+
+                // Easing: easeOutCubic for smooth deceleration
+                const eased = 1 - Math.pow(1 - progress, 3);
+
+                const scale = startScale + (endScale - startScale) * eased;
+                nodeMesh.scale.set(scale, scale, scale);
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Reset scale and call callback
+                    nodeMesh.scale.set(startScale, startScale, startScale);
+                    callback();
+                }
+            }
+
+            animate();
+        }
+
+        function openDetailView(node) {
+            currentGestureContext = GESTURE_CONTEXT.DETAIL; // ✅ ADD
+
+            if (!node || !node.content) return;
+
+            // Prevent opening again if already in detail view
+            if (isInDetailView) return;
+
+            isInDetailView = true;
+            currentDetailNode = node;
+            detailViewCooldown = true;
+            lastDetailOpenTime = Date.now();
+
+            // Reset cooldown after delay
+            setTimeout(() => {
+                detailViewCooldown = false;
+            }, DETAIL_COOLDOWN_MS);
+
+            const overlay = document.getElementById('detail-overlay');
+            const title = document.getElementById('detail-title');
+            const desc = document.getElementById('detail-description');
+            const videoSection = document.getElementById('video-section');
+            const videoFrame = document.getElementById('detail-video');
+            const eventsSection = document.getElementById('events-section');
+            const eventsContainer = document.getElementById('detail-events');
+            const subnodesSection = document.getElementById('subnodes-section');
+            const subnodesContainer = document.getElementById('detail-subnodes');
+
+            // Set title and description
+            title.textContent = node.label;
+            desc.textContent = node.content.description;
+
+            // Video
+            if (node.content.video) {
+                videoSection.style.display = 'block';
+                videoFrame.src = node.content.video;
+            } else {
+                videoSection.style.display = 'none';
+                videoFrame.src = '';
+            }
+
+            // Events
+            if (node.content.events && node.content.events.length > 0) {
+                eventsSection.style.display = 'block';
+                eventsContainer.innerHTML = node.content.events.map(event => `
+                    <div class="event-item">
+                        <div class="event-date">${event.date}</div>
+                        <div class="event-content">
+                            <h4>${event.title}</h4>
+                            <p>${event.desc}</p>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                eventsSection.style.display = 'none';
+            }
+
+            // Sub-nodes
+            if (node.content.subNodes && node.content.subNodes.length > 0) {
+                subnodesSection.style.display = 'block';
+                subnodesContainer.innerHTML = node.content.subNodes.map(subNode => `
+                    <div class="subnode-card">
+                        <h4>${subNode.label}</h4>
+                        <p>${subNode.desc}</p>
+                    </div>
+                `).join('');
+            } else {
+                subnodesSection.style.display = 'none';
+            }
+
+            // Show overlay with animation
+            overlay.style.display = 'block';
+            requestAnimationFrame(() => {
+                overlay.classList.add('active');
+            });
+
+            // Update status
+            document.getElementById('status').textContent = `📂 Đang xem: ${node.label} (Nắm đấm để thoát)`;
+        }
+
+        function exitDetailView() {
+            // Check cooldown - only exit if enough time has passed
+            if (detailViewCooldown) {
+                return; // Don't exit during cooldown
+            }
+
+            isInDetailView = false;
+            currentDetailNode = null;
+
+            const overlay = document.getElementById('detail-overlay');
+            const videoFrame = document.getElementById('detail-video');
+
+            // Stop video
+            videoFrame.src = '';
+
+            // Hide overlay with animation
+            overlay.classList.remove('active');
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 500);
+
+            document.getElementById('status').textContent = 'Đã quay lại Timeline chính';
+            currentGestureContext = GESTURE_CONTEXT.TIMELINE;
+
+        }
+
+        // ==========================================
+        // 3. THREE.JS INITIALIZATION
+        // ==========================================
+        function init3D() {
+            // CRITICAL: Prevent multiple calls (fixes missing nodes issue)
+            if (isInit3DCompleted) {
+                console.log('⚠️ init3D already completed, skipping to prevent scene reset');
+                return;
+            }
+
+            console.log('✅ Initializing 3D scene...');
+
+            const container = document.getElementById('canvas-container');
+
+            scene = new THREE.Scene();
+            // DISABLED FOG for performance (saves 3-5ms per frame)
+            // scene.fog = new THREE.FogExp2(0x0a0a1a, 0.003);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 150;
+
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true,
+                powerPreference: 'high-performance'
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+            container.appendChild(renderer.domElement);
+
+            // Create main group for timeline (for pan/zoom)
+            timelineGroup = new THREE.Group();
+            scene.add(timelineGroup);
+
+            // Create elements
+            createTimeline();
+            createNodes();
+            createConnections();
+
+            // Only start loop if not already running
+            if (!window.animationLoopStarted) {
+                window.animationLoopStarted = true;
+                animate();
+            }
+
+            isInit3DCompleted = true;
+            console.log('✅ 3D scene initialized successfully');
+        }
+
+        // DELETED: createBackgroundStars() and createParticleSystem()
+        // These functions were never called - 100+ lines of dead code removed
+        // This reduces file size and eliminates confusion
 
         // ==========================================
         // 6. TIMELINE LINE
         // ==========================================
         function createTimeline() {
-            // Main timeline curve - BIGGER & BRIGHTER
+            // Main timeline curve
             const curve = new THREE.CatmullRomCurve3([
-                new THREE.Vector3(-CONFIG.timelineLength * 1.2, 0, 0),
-                new THREE.Vector3(-100, 10, 5), // Cong nhe
+                new THREE.Vector3(-CONFIG.timelineLength, 0, 0),
+                new THREE.Vector3(-50, 5, 10),
                 new THREE.Vector3(0, 0, 0),
-                new THREE.Vector3(100, -10, -5), // Cong nhe
-                new THREE.Vector3(CONFIG.timelineLength * 1.2, 0, 0)
+                new THREE.Vector3(50, -5, -10),
+                new THREE.Vector3(CONFIG.timelineLength, 0, 0)
             ]);
 
-            // Use TubeGeometry for thickness
-            const geometry = new THREE.TubeGeometry(curve, 64, 2, 8, false); // Radius = 2 (Thick)
+            const points = curve.getPoints(100);
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
 
-            const material = new THREE.MeshBasicMaterial({
-                color: 0xFFD700, // Gold
+            const material = new THREE.LineBasicMaterial({
+                color: 0xFFD700,
+                linewidth: 2,
                 transparent: true,
-                opacity: 0.8,
-                side: THREE.DoubleSide
+                opacity: 0.6
             });
 
-            const timeline = new THREE.Mesh(geometry, material);
+            const timeline = new THREE.Line(geometry, material);
             timelineGroup.add(timeline);
 
-            // Outer Glow (Larger Tube)
-            const glowGeo = new THREE.TubeGeometry(curve, 64, 4, 8, false); // Radius = 4
-            const glowMat = new THREE.MeshBasicMaterial({
-                color: 0xFF6B6B, // Reddish glow
+            // Glow effect (larger line behind)
+            const glowMaterial = new THREE.LineBasicMaterial({
+                color: 0xFFD700,
+                linewidth: 4,
                 transparent: true,
-                opacity: 0.3,
-                side: THREE.BackSide,
-                depthWrite: false,
-                blending: THREE.AdditiveBlending
+                opacity: 0.2
             });
-            const glowLine = new THREE.Mesh(glowGeo, glowMat);
+            const glowLine = new THREE.Line(geometry.clone(), glowMaterial);
+            glowLine.scale.set(1.02, 1.02, 1.02);
             timelineGroup.add(glowLine);
         }
 
@@ -1700,108 +1976,21 @@
         }
 
 
-
-        // ==========================================
-        // XỬ LÝ TAY TRÁI - CAROUSEL (SWIPE)
-        // ==========================================
         function handleLeftCarousel(landmarks) {
-            // Task 1: Swipe Logic for Carousel
-            const fingers = countExtendedFingers(landmarks);
-            // Chỉ cần mở lòng bàn tay (4-5 ngón) hoặc chỉ ngón trỏ để swipe
-            const openFingers = Object.values(fingers).filter(Boolean).length;
+            if (!isOpenHand(landmarks)) return;
 
-            if (openFingers >= 4 || (fingers.index && !fingers.pinky)) {
-                const palm = landmarks[9]; // Middle finger MCP (center of palm approx)
-
-                if (prevPanPos) {
-                    const dx = palm.x - prevPanPos.x;
-
-                    // Ngưỡng swipe (threshold)
-                    if (dx > 0.08) { // Di chuyển sang phải -> Next
-                        navigateCards(1);
-                        prevPanPos = null; // Reset để bắt buộc người dùng vẫy lại
-                        return '👈 TAY TRÁI: NEXT CARD';
-                    } else if (dx < -0.08) { // Di chuyển sang trái -> Prev
-                        navigateCards(-1);
-                        prevPanPos = null;
-                        return '👈 TAY TRÁI: PREV CARD';
-                    }
-                } else {
-                    prevPanPos = palm;
-                }
-            } else {
-                prevPanPos = null;
-            }
-            return '';
-        }
-
-        // ...
-
-        // Task 2: Zoom Limit
-        // In animate loop or where loop is handled
-        // Actually, zoom is handled in 'wheel' event listeners or gesture zoom
-        // Let's modify the wheel listener and add constraints
-
-        // Add this helper function somewhere or modify existing `initCarouselControls` wheel logic?
-        // Wait, zoom is for 3D timeline.
-        // Let's look for `document.addEventListener('wheel', ...)` for 3D zoom.
-
-        // FOUND IT: It's likely in init3D or global listeners.
-        // Let's add strict zoom limits.
-
-        // Global variable for currentZoom is already there.
-
-        const MIN_ZOOM = 0.5; // Zoom out limit (adjust based on timeline length)
-        const MAX_ZOOM = 3.0; // Zoom in limit
-
-        document.addEventListener('wheel', (e) => {
-            if (isInDetailView) return; // Scroll detail view instead
-            if (document.getElementById('canvas-container').style.display === 'none') return;
-
-            e.preventDefault();
-
-            const zoomSpeed = 0.001;
-            let newZoom = currentZoom - e.deltaY * zoomSpeed;
-
-            // Task 2: Limit Zoom
-            // Clamp zoom to prevent seeing too much empty space
-            newZoom = Math.max(MIN_ZOOM, Math.min(newZoom, MAX_ZOOM));
-
-            currentZoom = newZoom;
-        }, { passive: false });
-
-
-        // Task 3: Speed up Node Transition
-        // In animateNodeZoom function
-        function animateNodeZoom(nodeMesh, callback) {
-            if (!nodeMesh) {
-                callback();
+            const palm = landmarks[9];
+            if (!prevPanPos) {
+                prevPanPos = palm;
                 return;
             }
 
-            const startScale = nodeMesh.scale.x;
-            const endScale = startScale * 2.5;
-            const duration = 250; // REDUCED FROM 500ms to 250ms (Faster!)
-            const startTime = Date.now();
+            const dx = palm.x - prevPanPos.x;
 
-            function animate() {
-                const elapsed = Date.now() - startTime;
-                const progress = Math.min(elapsed / duration, 1);
+            if (dx > 0.08) navigateCards(-1);
+            else if (dx < -0.08) navigateCards(1);
 
-                // ... rest is same
-
-                const eased = 1 - Math.pow(1 - progress, 3);
-                const scale = startScale + (endScale - startScale) * eased;
-                nodeMesh.scale.set(scale, scale, scale);
-
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                } else {
-                    nodeMesh.scale.set(startScale, startScale, startScale);
-                    callback();
-                }
-            }
-            animate();
+            prevPanPos = palm;
         }
 
 
