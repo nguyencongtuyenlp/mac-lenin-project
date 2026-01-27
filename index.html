@@ -612,8 +612,8 @@
 
         .node-card {
             /* GROK FIX: Use fixed width for stable calculation */
-            width: 280px;
-            height: 400px;
+            width: 420px;
+            height: 600px;
             /* Fixed height */
             flex-shrink: 0;
             /* Prevent squeezing */
@@ -2220,7 +2220,7 @@
             // but 100vw usually includes scrollbar in some browsers, 
             // so clientWidth is safer for "visible" area).
             const viewportWidth = document.documentElement.clientWidth;
-            const cardWidth = 280; // Fixed width from CSS
+            const cardWidth = 420; // Fixed width from CSS
             const gap = 40;        // Fixed gap from CSS
             const cardTotalWidth = cardWidth + gap;
 
