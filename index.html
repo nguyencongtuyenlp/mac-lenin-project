@@ -1338,6 +1338,8 @@
         }
 
         function openDetailView(node) {
+            currentGestureContext = GESTURE_CONTEXT.DETAIL; // ✅ ADD
+
             if (!node || !node.content) return;
 
             // Prevent opening again if already in detail view
@@ -1437,6 +1439,8 @@
             }, 500);
 
             document.getElementById('status').textContent = 'Đã quay lại Timeline chính';
+            currentGestureContext = GESTURE_CONTEXT.TIMELINE;
+
         }
 
         // ==========================================
@@ -1845,14 +1849,15 @@
         // PROCESS HANDS - NEW TWO-HAND SYSTEM
         // ==========================================
         function processHands(results) {
+            // Chỉ xử lý gesture khi đang ở gesture mode
+            if (controlMode !== 'gesture') return;
+
             leftHand = null;
             rightHand = null;
 
-            // Phân biệt tay trái/phải
             if (results.multiHandLandmarks && results.multiHandedness) {
                 results.multiHandLandmarks.forEach((landmarks, i) => {
                     const handedness = results.multiHandedness[i].label;
-                    // MediaPipe mirrors: Left in image = Right hand in reality
                     if (handedness === 'Left') {
                         rightHand = landmarks;
                     } else {
@@ -1861,27 +1866,27 @@
                 });
             }
 
-            let statusText = '';
+            // =====================
+            // CONTEXT AWARE HANDLING
+            // =====================
 
-            // Xử lý tay trái - PAN
-            if (leftHand) {
-                statusText = handleLeftHand(leftHand) || statusText;
-            } else {
-                prevPanPos = null;
+            if (currentGestureContext === GESTURE_CONTEXT.CAROUSEL) {
+                if (leftHand) handleLeftCarousel(leftHand);
+                if (rightHand) handleRightCommon(rightHand);
             }
 
-            // Xử lý tay phải - CURSOR + ACTIONS
-            if (rightHand) {
-                statusText = handleRightHand(rightHand) || statusText;
+            else if (currentGestureContext === GESTURE_CONTEXT.DETAIL) {
+                if (leftHand) handleLeftDetail(leftHand);
+                if (rightHand) handleRightCommon(rightHand);
             }
 
-            // Cập nhật status
-            if (statusText) {
-                document.getElementById('status').textContent = statusText;
-            } else if (!leftHand && !rightHand) {
-                document.getElementById('status').textContent = 'Đưa tay vào camera để điều khiển';
+            else if (currentGestureContext === GESTURE_CONTEXT.TIMELINE) {
+                if (leftHand) handleLeftTimeline(leftHand);
+                if (rightHand) handleRightCommon(rightHand);
             }
         }
+
+
 
         // ==========================================
         // XỬ LÝ TAY TRÁI - PAN
@@ -1942,19 +1947,6 @@
                 }
                 return '🖖 3 NGÓN: QUAY LẠI';
             }
-
-            // 4. NẮM ĐẤM → Zoom OUT
-            if (openFingers === 0) {
-                currentZoom = Math.max(CONFIG.zoomMin, currentZoom - 0.02);
-                return `✊ NẮM ĐẤM: ZOOM OUT (${(currentZoom * 100).toFixed(0)}%)`;
-            }
-
-            // 3. PINCH → Zoom IN
-            if (pinchDist < 0.05) {
-                currentZoom = Math.min(CONFIG.zoomMax, currentZoom + 0.02);
-                return `🤏 PINCH: ZOOM IN (${(currentZoom * 100).toFixed(0)}%)`;
-            }
-
             // 2. 2 NGÓN → Chọn/Vào node
             if (fingers.index && fingers.middle && !fingers.ring && !fingers.pinky) {
                 return selectOrEnterNode();
@@ -1973,6 +1965,56 @@
 
             return '';
         }
+        function handleLeftDetail(landmarks) {
+            if (!isOpenHand(landmarks)) return;
+
+            const palm = landmarks[9];
+            if (!prevPanPos) {
+                prevPanPos = palm;
+                return;
+            }
+
+            const dy = palm.y - prevPanPos.y;
+            const container = document.getElementById('detail-container');
+
+            container.scrollTop += dy * 1200;
+
+            prevPanPos = palm;
+        }
+
+        function handleLeftTimeline(landmarks) {
+            if (!isOpenHand(landmarks)) return;
+
+            const palm = landmarks[9];
+            if (!prevPanPos) {
+                prevPanPos = palm;
+                return;
+            }
+
+            panOffset.x += (prevPanPos.x - palm.x) * 200;
+            panOffset.y += (palm.y - prevPanPos.y) * 150;
+
+            prevPanPos = palm;
+        }
+
+
+        function handleLeftCarousel(landmarks) {
+            if (!isOpenHand(landmarks)) return;
+
+            const palm = landmarks[9];
+            if (!prevPanPos) {
+                prevPanPos = palm;
+                return;
+            }
+
+            const dx = palm.x - prevPanPos.x;
+
+            if (dx > 0.08) navigateCards(-1);
+            else if (dx < -0.08) navigateCards(1);
+
+            prevPanPos = palm;
+        }
+
 
         // ==========================================
         // DI CHUYỂN CURSOR ẢO
@@ -2070,6 +2112,18 @@
         // CAROUSEL & MODE SWITCHING
         // ==========================================
         let controlMode = null; // 'gesture' or 'mouse'
+        // =====================
+        // GESTURE CONTEXT STATE
+        // =========    ============
+        const GESTURE_CONTEXT = {
+            CAROUSEL: 'carousel',
+            DETAIL: 'detail',
+            TIMELINE: 'timeline'
+        };
+
+        let currentGestureContext = null;
+
+        // Carousel
         let currentCardIndex = 1; // Start at index 1 (center visual balance)
         let currentActiveCard = null;
 
@@ -2172,6 +2226,7 @@
 
         function startGestureMode() {
             controlMode = 'gesture';
+            currentGestureContext = GESTURE_CONTEXT.CAROUSEL;
             document.getElementById('welcome-overlay').style.display = 'none';
             document.getElementById('gesture-panel').style.display = 'flex';
             document.getElementById('node-cards-container').style.display = 'flex';
@@ -2343,6 +2398,7 @@
 
             // Lưu current card
             currentActiveCard = cardId;
+            currentGestureContext = GESTURE_CONTEXT.TIMELINE; // ✅ ADD
 
             // Force a render to ensure scene is visible
             if (renderer && scene && camera) {
@@ -2384,6 +2440,8 @@
 
             // Back button remains visible (for Carousel -> Welcome)
             document.getElementById('global-back-btn').style.display = 'block';
+            currentGestureContext = GESTURE_CONTEXT.CAROUSEL;
+
         }
 
         function resetToWelcome() {
