@@ -588,7 +588,7 @@
             transform: translate(-50%, -50%);
             display: none;
             align-items: center;
-            justify-content: flex-start;
+            justify-content: center;
             width: 100vw;
             height: 100vh;
             z-index: 50;
@@ -833,9 +833,7 @@
 
     <!-- Carousel Cards Container -->
     <div id="node-cards-container">
-        <button class="nav-arrow" onclick="navigateCards(-1)">
-            <span>◀</span>
-        </button>
+
 
         <div id="node-cards-wrapper">
             <div class="node-card" data-node-id="1" onclick="selectCard(1)">
@@ -923,9 +921,6 @@
             </div>
         </div>
 
-        <button class="nav-arrow" onclick="navigateCards(1)">
-            <span>▶</span>
-        </button>
     </div>
 
     <!-- Vertical Gesture Panel (Right Side) -->
