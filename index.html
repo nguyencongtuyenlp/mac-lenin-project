@@ -600,15 +600,11 @@
         #node-cards-wrapper {
             display: flex;
             align-items: center;
-            justify-content: flex-start;
-            /* GROK FIX: Don't auto-center, use translateX instead */
             gap: 40px;
-            flex: 1;
-            max-width: 1400px;
-            /* GROK-INSPIRED: Smooth slide animation */
-            transition: transform 1s ease-in-out;
-            transform: translateX(0);
+            transition: transform 0.8s ease-in-out;
+            will-change: transform;
         }
+
 
         .node-card {
             /* GROK FIX: Use fixed width for stable calculation */
@@ -2076,7 +2072,10 @@
         let controlMode = null; // 'gesture' or 'mouse'
         let currentCardIndex = 0;
         let currentActiveCard = null; // Track which card's timeline is active
-        const totalCards = 7;
+        function getTotalCards() {
+            return document.querySelectorAll('.node-card').length;
+        }
+
 
         // MediaPipe global instances
         let handsInstance = null;
@@ -2147,69 +2146,55 @@
         }
 
         function navigateCards(direction) {
+            const totalCards = getTotalCards();
             const newIndex = currentCardIndex + direction;
 
-            // BOUNDARY CHECK: Stop at first/last card (no wrap around)
-            if (newIndex < 0) {
-                console.log('⚠️ Đã đến card đầu tiên, không thể lùi thêm!');
-                return; // Don't go before first card
-            }
-            if (newIndex >= totalCards) {
-                console.log('⚠️ Đã đến card cuối cùng, không thể tiến thêm!');
-                return; // Don't go past last card
-            }
+            if (newIndex < 0 || newIndex >= totalCards) return;
 
             currentCardIndex = newIndex;
             updateCarouselScale();
         }
 
         function updateCarouselScale() {
-            const wrapper = document.getElementById('node-cards-wrapper');
-            const cards = document.querySelectorAll('.node-card');
-
-            if (!wrapper || cards.length === 0) return;
-
-            // GROK FIX: Proper center calculation
-            const cardWidth = cards[0].offsetWidth || 500;
-            const gap = 40; // from CSS
             const container = document.getElementById('node-cards-container');
+            const wrapper = document.getElementById('node-cards-wrapper');
+            const cards = Array.from(document.querySelectorAll('.node-card'));
 
-            // Offset with center compensation (GROK's formula)
-            // container.clientWidth is 100vw
-            // cardWidth is fixed 280px
-            // gap is 40px
-            const offset = -currentCardIndex * (cardWidth + gap) + (container.clientWidth / 2 - cardWidth / 2);
+            if (!container || !wrapper || cards.length === 0) return;
 
-            // Apply slide transform
+            const cardWidth = cards[0].offsetWidth || 280;
+            const gap = 40;
+            const viewportWidth = window.innerWidth;
+
+            // Tính offset chuẩn – không lệch, không phụ thuộc scrollbar
+            const offset =
+                -currentCardIndex * (cardWidth + gap)
+                + (viewportWidth / 2 - cardWidth / 2);
+
             wrapper.style.transform = `translateX(${offset}px)`;
-
-            console.log(`🎯 Carousel: Card ${currentCardIndex + 1}/${totalCards}, offset: ${offset}px`);
+            wrapper.style.willChange = 'transform';
 
             cards.forEach((card, index) => {
-                // Remove all classes
-                card.classList.remove('center', 'side', 'prev', 'next');
-
-                // CRITICAL FIX: ALWAYS DISPLAY ALL CARDS so layout exists!
+                // RESET HOÀN TOÀN TRẠNG THÁI (FIX LỖI LỚN NHẤT)
+                card.className = 'node-card';
+                card.style.opacity = '';
+                card.style.transform = '';
                 card.style.display = 'block';
 
-                // Calculate relative position to current card
-                let relativePos = index - currentCardIndex;
+                const relative = index - currentCardIndex;
 
-                // Apply classes based on position
-                if (relativePos === 0) {
+                if (relative === 0) {
                     card.classList.add('center');
-                } else if (Math.abs(relativePos) === 1) {
+                } else if (Math.abs(relative) === 1) {
                     card.classList.add('side');
-                    if (relativePos === -1) card.classList.add('prev');
-                    if (relativePos === 1) card.classList.add('next');
                 } else {
-                    // Cards further away -> just opacity 0 or normal style
-                    // keep them in flow
-                    card.style.opacity = '0.3';
+                    // card xa → nhẹ, không animation phức tạp
+                    card.style.opacity = '0.25';
                     card.style.transform = 'scale(0.6) translateY(-2rem)';
                 }
             });
         }
+
 
         // Add resize listener (Grok recommendation)
         window.addEventListener('resize', () => {
