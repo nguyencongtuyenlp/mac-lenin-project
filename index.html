@@ -804,6 +804,9 @@
 </head>
 
 <body>
+    <!-- Background Music -->
+    <audio id="bg-music" src="dang.mp3" loop preload="auto"></audio>
+
     <!-- Welcome Screen -->
     <div id="welcome-overlay">
         <div id="welcome-container">
@@ -1110,7 +1113,7 @@
                     label: "Khởi đầu",
                     year: "1848",
                     desc: "Điểm xuất phát của hành trình",
-                    x: -100, y: 0,
+                    x: -100, y: 60,
                     children: [2, 3],
                     color: 0xFF6B6B,
                     content: {
@@ -1216,7 +1219,7 @@
                     id: 6,
                     label: "Đích đến",
                     desc: "Mục tiêu cuối cùng đạt được",
-                    x: 100, y: 0,
+                    x: 100, y: -60,
                     children: [],
                     color: 0xAA96DA,
                     content: {
@@ -1499,38 +1502,53 @@
         // ==========================================
         // 6. TIMELINE LINE
         // ==========================================
+        // Global variable for the curve
+        let mainTimelineCurve = null;
+
+        // ==========================================
+        // 6. TIMELINE LINE
+        // ==========================================
         function createTimeline() {
-            // Main timeline curve
+            // 1. TẠO ĐƯỜNG CONG (Curve)
+            // Bạn có thể chỉnh các điểm Vector3 ở đây để đổi hình dáng đường line
             const curve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(-CONFIG.timelineLength - 50, 20, 0), // Điểm đầu xa
                 new THREE.Vector3(-CONFIG.timelineLength, 0, 0),
-                new THREE.Vector3(-50, 5, 10),
-                new THREE.Vector3(0, 0, 0),
-                new THREE.Vector3(50, -5, -10),
-                new THREE.Vector3(CONFIG.timelineLength, 0, 0)
+                new THREE.Vector3(-50, 5, 20),
+                new THREE.Vector3(0, 0, 0),       // Điểm giữa
+                new THREE.Vector3(50, -5, -20),
+                new THREE.Vector3(CONFIG.timelineLength, 0, 0),
+                new THREE.Vector3(CONFIG.timelineLength + 50, -20, 0)  // Điểm cuối xa
             ]);
 
-            const points = curve.getPoints(100);
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            // Save globally for connections
+            mainTimelineCurve = curve;
 
-            const material = new THREE.LineBasicMaterial({
-                color: 0xFFD700,
-                linewidth: 2,
+            // 2. TẠO HÌNH KHỐI (Geometry) - Dùng TubeGeometry để có độ dày
+            // Tham số thứ 3 (2) là RADIUS (Độ to). Chỉnh số này để to/nhỏ.
+            const tubeGeometry = new THREE.TubeGeometry(curve, 100, 2, 8, false);
+
+            // 3. MATERIAL CHÍNH (Lõi vàng sáng)
+            const material = new THREE.MeshBasicMaterial({
+                color: 0xFFD700, // Màu vàng Gold
                 transparent: true,
-                opacity: 0.6
+                opacity: 0.8     // Độ đậm
             });
 
-            const timeline = new THREE.Line(geometry, material);
+            const timeline = new THREE.Mesh(tubeGeometry, material);
             timelineGroup.add(timeline);
 
-            // Glow effect (larger line behind)
-            const glowMaterial = new THREE.LineBasicMaterial({
-                color: 0xFFD700,
-                linewidth: 4,
+            // 4. HIỆU ỨNG GLOW (Lớp vỏ ngoài phát sáng)
+            // Radius to hơn (4) và opacity thấp (0.3) để tạo vùng hào quang
+            const glowGeometry = new THREE.TubeGeometry(curve, 100, 4, 8, false);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFF6B6B, // Màu đỏ cam (Neon)
                 transparent: true,
-                opacity: 0.2
+                opacity: 0.3,
+                side: THREE.BackSide // Render mặt sau để nhìn xuyên thấu đẹp hơn
             });
-            const glowLine = new THREE.Line(geometry.clone(), glowMaterial);
-            glowLine.scale.set(1.02, 1.02, 1.02);
+
+            const glowLine = new THREE.Mesh(glowGeometry, glowMaterial);
             timelineGroup.add(glowLine);
         }
 
@@ -1655,65 +1673,97 @@
         // ==========================================
         // 8. CONNECTIONS (Lines between nodes)
         // ==========================================
+        // ==========================================
+        // 8. CONNECTIONS (Lines from Main Line to Nodes)
+        // ==========================================
         function createConnections() {
-            timelineData.connections.forEach(conn => {
-                const fromNode = timelineData.nodes.find(n => n.id === conn.from);
-                const toNode = timelineData.nodes.find(n => n.id === conn.to);
+            // Lấy danh sách điểm trên đường cong chính để tìm điểm gần nhất
+            const curvePoints = mainTimelineCurve ? mainTimelineCurve.getPoints(200) : [];
 
-                if (fromNode && toNode) {
-                    const curve = new THREE.QuadraticBezierCurve3(
-                        new THREE.Vector3(fromNode.x, fromNode.y, 0),
-                        new THREE.Vector3((fromNode.x + toNode.x) / 2, (fromNode.y + toNode.y) / 2 + 20, 10),
-                        new THREE.Vector3(toNode.x, toNode.y, 0)
-                    );
+            timelineData.nodes.forEach(node => {
+                // TÌM ĐIỂM BẮT ĐẦU CHÍNH XÁC TRÊN ĐƯỜNG CONG
+                // Thay vì (node.x, 0, 0), ta tìm điểm trên curve có tọa độ x gần với node.x nhất
+                let startPoint = new THREE.Vector3(node.x, 0, 0);
 
-                    // Ống trụ thay cho đường line để có độ dày
-                    // Tham số thứ 3 (0.3) là ĐỘ DÀY (Radius). Chỉnh to/nhỏ ở đây.
-                    const tubeGeometry = new THREE.TubeGeometry(curve, 32, 0.3, 8, false);
+                if (curvePoints.length > 0) {
+                    // Tìm điểm có khoảng cách x nhỏ nhất
+                    let closestP = curvePoints[0];
+                    let minDiff = Math.abs(closestP.x - node.x);
 
-                    // Material với hiệu ứng phát sáng (không làm biến dạng hình dạng)
-                    const material = new THREE.ShaderMaterial({
-                        uniforms: {
-                            color: { value: new THREE.Color(0xFFD700) }
-                        },
-                        vertexShader: `
-                            varying vec2 vUv;
-                            void main() {
-                                vUv = uv;
-                                // Giữ nguyên position, không transform
-                                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                            }
-                        `,
-                        fragmentShader: `
-                            varying vec2 vUv;
-                            uniform vec3 color;
-                            void main() {
-                                // Glow effect: thon 2 đầu bằng opacity (không biến dạng shape)
-                                float centerGlow = 1.0 - abs(vUv.x - 0.5) * 2.0;
-                                centerGlow = pow(centerGlow, 0.3);
-                                
-                                // Side glow for tube appearance
-                                float sideGlow = 1.0 - abs(vUv.y - 0.5) * 2.0;
-                                sideGlow = pow(sideGlow, 0.8);
-                                
-                                float totalGlow = centerGlow * sideGlow;
-                                gl_FragColor = vec4(color, 0.4 + 0.6 * totalGlow);
-                            }
-                        `,
-                        transparent: true,
-                        side: THREE.DoubleSide,
-                        blending: THREE.AdditiveBlending
-                    });
-
-                    const mesh = new THREE.Mesh(tubeGeometry, material);
-                    connectionLines.push(mesh);
-                    timelineGroup.add(mesh);
+                    for (let p of curvePoints) {
+                        const diff = Math.abs(p.x - node.x);
+                        if (diff < minDiff) {
+                            minDiff = diff;
+                            closestP = p;
+                        }
+                    }
+                    startPoint = closestP.clone();
                 }
+
+                // Điểm kết thúc: Tại vị trí node
+                const endPoint = new THREE.Vector3(node.x, node.y, 0);
+
+                // Tạo đường cong nhẹ cho tự nhiên
+                const midPoint = new THREE.Vector3(
+                    node.x,
+                    (startPoint.y + node.y) / 2, // Trung điểm y
+                    15
+                );
+
+                const curve = new THREE.QuadraticBezierCurve3(
+                    startPoint,
+                    midPoint,
+                    endPoint
+                );
+
+                // 1. Ống kết nối (Branch)
+                // - Radius 0.8 (đủ dày để trông cứng cáp như cành cây)
+                const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.8, 8, false);
+
+                // - Màu VÀNG GOLD giống trục chính -> Tạo cảm giác "liền khối"
+                const material = new THREE.MeshBasicMaterial({
+                    color: 0xFFD700,
+                    transparent: true,
+                    opacity: 0.8 // Opacity cao hơn để trông rắn rỏi
+                });
+
+                const mesh = new THREE.Mesh(tubeGeometry, material);
+                connectionLines.push(mesh);
+                timelineGroup.add(mesh);
+
+                // 2. Khớp nối (Joint)
+                // Tạo một khối cầu tại điểm giao nhau để che vết cắt -> Trông như mọc ra từ thân
+                const jointGeometry = new THREE.SphereGeometry(2.5, 16, 16); // Hơi to hơn radius main line (2) một chút
+                const jointMesh = new THREE.Mesh(jointGeometry, material);
+                jointMesh.position.copy(startPoint);
+                timelineGroup.add(jointMesh);
             });
         }
 
         // ==========================================
         // 9. ANIMATION LOOP
+        // ==========================================
+
+        // --- ZOOM CONTROL with LIMITS ---
+        const MIN_ZOOM = 0.8;
+        const MAX_ZOOM = 3.0;
+
+        document.addEventListener('wheel', (e) => {
+            // Chỉ zoom khi đang ở Timeline View (canvas hiện) và KHÔNG ở trong Detail View
+            const canvasContainer = document.getElementById('canvas-container');
+            if (!canvasContainer || canvasContainer.style.display === 'none') return;
+            if (isInDetailView) return;
+
+            e.preventDefault();
+
+            const zoomSpeed = 0.001;
+            let newZoom = currentZoom - e.deltaY * zoomSpeed;
+
+            // Giới hạn Zoom (Clamping)
+            newZoom = Math.max(MIN_ZOOM, Math.min(newZoom, MAX_ZOOM));
+
+            currentZoom = newZoom;
+        }, { passive: false });
         // ==========================================
         let lastTime = 0;
         const targetFPS = 30;
@@ -2218,6 +2268,13 @@
             updateCarouselScale();
             startSystem();
             startMediaPipe();
+
+            // Auto-play Music (User Interaction Triggered)
+            const music = document.getElementById('bg-music');
+            if (music) {
+                music.volume = 0.5; // 50% volume for pleasant background
+                music.play().catch(e => console.log('Autoplay blocked:', e));
+            }
         }
 
         function startMouseMode() {
@@ -2236,6 +2293,13 @@
             enableMouseControls();
             init3D();
             stopMediaPipe();
+
+            // Auto-play Music (User Interaction Triggered)
+            const music = document.getElementById('bg-music');
+            if (music) {
+                music.volume = 0.5;
+                music.play().catch(e => console.log('Autoplay blocked:', e));
+            }
         }
 
         function navigateCards(direction) {
