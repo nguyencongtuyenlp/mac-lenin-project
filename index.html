@@ -800,12 +800,61 @@
             border-color: #FFD700;
             box-shadow: 0 0 15px rgba(255, 204, 0, 0.3);
         }
+
+        /* NEW: AUDIO TOGGLE BUTTON */
+        #audio-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #FFD700;
+            border-radius: 50%;
+            color: #FFD700;
+            cursor: pointer;
+            z-index: 9999;
+            /* Luôn nổi lên trên cùng */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        #audio-btn:hover {
+            transform: scale(1.1);
+            background: rgba(255, 215, 0, 0.2);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+        }
+
+        #audio-btn.playing {
+            animation: pulse-audio 2s infinite;
+        }
+
+        @keyframes pulse-audio {
+            0% {
+                box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+            }
+
+            100% {
+                box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+            }
+        }
     </style>
 </head>
 
 <body>
     <!-- Background Music -->
     <audio id="bg-music" src="dang.mp3" loop preload="auto"></audio>
+
+    <!-- Audio Toggle Button -->
+    <button id="audio-btn" onclick="toggleAudio()" title="Bật/Tắt nhạc">🔇</button>
 
     <!-- Welcome Screen -->
     <div id="welcome-overlay">
@@ -2264,17 +2313,13 @@
             // Hiện nút back ngay từ Carousel
             document.getElementById('global-back-btn').style.display = 'block';
 
-            initCarouselControls(); // Init invisible controls
+            initCarouselControls();
             updateCarouselScale();
             startSystem();
             startMediaPipe();
 
-            // Auto-play Music (User Interaction Triggered)
-            const music = document.getElementById('bg-music');
-            if (music) {
-                music.volume = 0.5; // 50% volume for pleasant background
-                music.play().catch(e => console.log('Autoplay blocked:', e));
-            }
+            // Auto-play Music via Toggle Function
+            toggleAudio(true);
         }
 
         function startMouseMode() {
@@ -2288,17 +2333,45 @@
             // Hiện nút back ngay từ Carousel
             document.getElementById('global-back-btn').style.display = 'block';
 
-            initCarouselControls(); // Init invisible controls
+            initCarouselControls();
             updateCarouselScale();
             enableMouseControls();
             init3D();
             stopMediaPipe();
 
-            // Auto-play Music (User Interaction Triggered)
+            // Auto-play Music via Toggle Function
+            toggleAudio(true);
+        }
+
+        // --- AUDIO CONTROL LOGIC ---
+        function toggleAudio(forcePlay = false) {
             const music = document.getElementById('bg-music');
-            if (music) {
+            const btn = document.getElementById('audio-btn');
+
+            if (!music || !btn) return;
+
+            if (forcePlay) {
                 music.volume = 0.5;
-                music.play().catch(e => console.log('Autoplay blocked:', e));
+                music.play().then(() => {
+                    btn.textContent = '🎵';
+                    btn.classList.add('playing');
+                }).catch(e => {
+                    console.log('Autoplay blocked:', e);
+                    btn.textContent = '🔇';
+                    btn.classList.remove('playing');
+                });
+                return;
+            }
+
+            if (music.paused) {
+                music.volume = 0.5;
+                music.play();
+                btn.textContent = '🎵';
+                btn.classList.add('playing');
+            } else {
+                music.pause();
+                btn.textContent = '🔇';
+                btn.classList.remove('playing');
             }
         }
 
