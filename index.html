@@ -2164,12 +2164,11 @@
 
             const cardWidth = cards[0].offsetWidth || 280;
             const gap = 40;
-            const viewportWidth = window.innerWidth;
+            const containerWidth = container.offsetWidth;
 
-            // Tính offset chuẩn – không lệch, không phụ thuộc scrollbar
             const offset =
                 -currentCardIndex * (cardWidth + gap)
-                + (viewportWidth / 2 - cardWidth / 2);
+                + (containerWidth / 2 - cardWidth / 2);
 
             wrapper.style.transform = `translateX(${offset}px)`;
             wrapper.style.willChange = 'transform';
