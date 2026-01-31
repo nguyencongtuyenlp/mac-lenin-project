@@ -437,29 +437,132 @@
             font-size: 13px;
             z-index: 350;
         }
+
+        /* ==========================================
+           WELCOME SCREEN
+           ========================================== */
+        #welcome-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0a0a2a 100%);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #welcome-container {
+            text-align: center;
+            max-width: 900px;
+            padding: 40px;
+        }
+
+        #welcome-title {
+            font-size: 56px;
+            color: #FFD700;
+            margin-bottom: 15px;
+            text-shadow: 0 0 40px rgba(255, 215, 0, 0.7);
+            font-weight: 800;
+            letter-spacing: 3px;
+        }
+
+        #welcome-subtitle {
+            font-size: 20px;
+            color: #ddd;
+            margin-bottom: 60px;
+            letter-spacing: 2px;
+        }
+
+        #welcome-options {
+            display: flex;
+            gap: 50px;
+            justify-content: center;
+        }
+
+        .welcome-btn {
+            flex: 1;
+            max-width: 350px;
+            padding: 50px 40px;
+            background: rgba(20, 20, 40, 0.9);
+            border: 3px solid #FFD700;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.4s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .welcome-btn:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 25px 70px rgba(255, 215, 0, 0.5);
+            background: rgba(30, 30, 50, 1);
+            border-color: #FFD700;
+        }
+
+        .btn-icon {
+            font-size: 72px;
+            display: block;
+        }
+
+        .btn-text {
+            font-size: 26px;
+            color: #FFD700;
+            font-weight: 700;
+            display: block;
+        }
+
+        .btn-desc {
+            font-size: 15px;
+            color: #bbb;
+            display: block;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Welcome Screen -->
+    <div id="welcome-overlay">
+        <div id="welcome-container">
+            <h1 id="welcome-title">✦ Interactive Timeline</h1>
+            <p id="welcome-subtitle">Khám phá dòng chảy sự kiện</p>
+
+            <div id="welcome-options">
+                <button class="welcome-btn" onclick="startGestureMode()">
+                    <span class="btn-icon">🖐</span>
+                    <span class="btn-text">Trải nghiệm cử chỉ tay</span>
+                    <span class="btn-desc">Điều khiển bằng camera</span>
+                </button>
+
+                <button class="welcome-btn" onclick="startMouseMode()">
+                    <span class="btn-icon">🖱️</span>
+                    <span class="btn-text">Dùng con trỏ</span>
+                    <span class="btn-desc">Điều khiển bằng chuột</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="canvas-container"></div>
 
-    <!-- Header -->
-    <div id="header">
+    <!-- Header (hidden until mode selected) -->
+    <div id="header" style="display: none;">
         <div id="title">✦ Interactive Timeline</div>
         <canvas id="camera-preview"></canvas>
     </div>
 
     <!-- Toggle Cursor Button -->
-    <button id="btn-toggle-cursor" onclick="toggleCursor()">👆 Con trỏ: Tắt</button>
+    <button id="btn-toggle-cursor" onclick="toggleCursor()" style="display: none;">👆 Con trỏ: Tắt</button>
 
     <!-- Virtual Cursor -->
     <div id="virtual-cursor"></div>
 
-    <!-- Start Button -->
-    <button id="btnStart" onclick="startSystem()">🖐 START WITH GESTURES</button>
-
-    <!-- Status -->
-    <div id="status">Đang chờ khởi động...</div>
+    <!-- Status (hidden until mode selected) -->
+    <div id="status" style="display: none;">Đang chờ khởi động...</div>
 
     <!-- Node Info Panel -->
     <div id="node-info">
@@ -724,6 +827,76 @@
                 btn.classList.remove('active');
                 cursor.style.display = 'none';
             }
+        }
+
+        // ==========================================
+        // WELCOME SCREEN MODES
+        // ==========================================
+        let isGestureMode = false;
+
+        function startGestureMode() {
+            isGestureMode = true;
+            document.getElementById('welcome-overlay').style.display = 'none';
+            document.getElementById('header').style.display = 'flex';
+            document.getElementById('btn-toggle-cursor').style.display = 'block';
+            document.getElementById('status').style.display = 'block';
+            document.getElementById('controls').style.display = 'flex';
+
+            // Start camera and hand tracking
+            init3D();
+            startCamera();
+        }
+
+        function startMouseMode() {
+            isGestureMode = false;
+            document.getElementById('welcome-overlay').style.display = 'none';
+            document.getElementById('header').style.display = 'flex';
+            document.getElementById('status').style.display = 'block';
+            document.getElementById('controls').style.display = 'none'; // Hide gesture hints
+            document.getElementById('camera-preview').style.display = 'none'; // Hide camera
+
+            // Only init 3D, no camera
+            init3D();
+            document.getElementById('status').textContent = '🖱️ Dùng chuột để tương tác';
+        }
+
+        function startCamera() {
+            document.getElementById('status').textContent = 'Đang khởi động camera...';
+
+            const video = document.querySelector('.input_video');
+            const canvas = document.getElementById('camera-preview');
+            const ctx = canvas.getContext('2d');
+
+            const hands = new Hands({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+            });
+
+            hands.setOptions({
+                maxNumHands: 2,
+                modelComplexity: 1,
+                minDetectionConfidence: 0.7,
+                minTrackingConfidence: 0.5
+            });
+
+            hands.onResults((results) => {
+                ctx.save();
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+                ctx.restore();
+                processHands(results);
+            });
+
+            const cameraUtils = new Camera(video, {
+                onFrame: async () => {
+                    await hands.send({ image: video });
+                },
+                width: 640,
+                height: 480
+            });
+
+            cameraUtils.start().then(() => {
+                document.getElementById('status').textContent = 'Sẵn sàng! Đưa tay vào camera';
+            });
         }
 
         // NEW: Check if hand is a fist (all fingers closed)

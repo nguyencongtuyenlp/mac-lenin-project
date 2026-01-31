@@ -11,9 +11,6 @@ let panOffset = { x: 0, y: 0 };
 let selectedNode = null;
 let hoveredNode = null;
 
-// Carousel state
-let currentCardIndex = 0; // Current active card in carousel (0-indexed)
-
 // Hand tracking
 let leftHand = null, rightHand = null;
 let prevPinchDist = 0;
@@ -92,16 +89,16 @@ function animateNodeZoom(nodeMesh, callback) {
     animate();
 }
 
-function openDetailView(nodeData) {
-    currentGestureContext = GESTURE_CONTEXT.DETAIL;
+function openDetailView(node) {
+    currentGestureContext = GESTURE_CONTEXT.DETAIL; // ✅ ADD
 
-    if (!nodeData) return;
+    if (!node || !node.content) return;
 
     // Prevent opening again if already in detail view
     if (isInDetailView) return;
 
     isInDetailView = true;
-    currentDetailNode = nodeData;
+    currentDetailNode = node;
     detailViewCooldown = true;
     lastDetailOpenTime = Date.now();
 
@@ -112,53 +109,64 @@ function openDetailView(nodeData) {
 
     const overlay = document.getElementById('detail-overlay');
     const title = document.getElementById('detail-title');
-    const quote = document.getElementById('detail-quote');
+    const desc = document.getElementById('detail-description');
+    const videoSection = document.getElementById('video-section');
+    const videoFrame = document.getElementById('detail-video');
     const eventsSection = document.getElementById('events-section');
     const eventsContainer = document.getElementById('detail-events');
     const subnodesSection = document.getElementById('subnodes-section');
     const subnodesContainer = document.getElementById('detail-subnodes');
 
-    // Set title (use title from data, fallback to year)
-    title.textContent = nodeData.title || `Sự kiện năm ${nodeData.year}`;
+    // Set title and description
+    title.textContent = node.label;
+    desc.textContent = node.content.description;
 
-    // Set quote/description 
-    quote.textContent = nodeData.description || 'Không có hành trình nào mà không có thử thách. Đây là giai đoạn đối mặt với những khó khăn, học cách thích nghi và tìm ra giải pháp sáng tạo.';
+    // Video
+    if (node.content.video) {
+        videoSection.style.display = 'block';
+        videoFrame.src = node.content.video;
+    } else {
+        videoSection.style.display = 'none';
+        videoFrame.src = '';
+    }
 
-    // Events - Tạo placeholder events nếu không có
-    const events = nodeData.events || [
-        { date: nodeData.year || 'N/A', title: nodeData.title || 'Sự kiện', desc: 'Chi tiết đang được cập nhật...' }
-    ];
+    // Events
+    if (node.content.events && node.content.events.length > 0) {
+        eventsSection.style.display = 'block';
+        eventsContainer.innerHTML = node.content.events.map(event => `
+                    <div class="event-item">
+                        <div class="event-date">${event.date}</div>
+                        <div class="event-content">
+                            <h4>${event.title}</h4>
+                            <p>${event.desc}</p>
+                        </div>
+                    </div>
+                `).join('');
+    } else {
+        eventsSection.style.display = 'none';
+    }
 
-    eventsContainer.innerHTML = events.map(event => `
-        <div class="event-item">
-            <div class="event-date">${event.date}</div>
-            <div class="event-content">
-                <div class="event-title">${event.title}</div>
-                <div class="event-desc">${event.desc || ''}</div>
-            </div>
-        </div>
-    `).join('');
-
-    // Sub-nodes - Tạo placeholder nếu không có
-    const subnodes = nodeData.subNodes || [
-        { label: 'Chi tiết 1', desc: 'Đang cập nhật...' },
-        { label: 'Chi tiết 2', desc: 'Đang cập nhật...' }
-    ];
-
-    subnodesContainer.innerHTML = subnodes.map(subNode => `
-        <div class="subnode-btn">
-            <div class="subnode-title">${subNode.label}</div>
-            <div class="subnode-desc">${subNode.desc || ''}</div>
-        </div>
-    `).join('');
+    // Sub-nodes
+    if (node.content.subNodes && node.content.subNodes.length > 0) {
+        subnodesSection.style.display = 'block';
+        subnodesContainer.innerHTML = node.content.subNodes.map(subNode => `
+                    <div class="subnode-card">
+                        <h4>${subNode.label}</h4>
+                        <p>${subNode.desc}</p>
+                    </div>
+                `).join('');
+    } else {
+        subnodesSection.style.display = 'none';
+    }
 
     // Show overlay with animation
     overlay.style.display = 'block';
     requestAnimationFrame(() => {
-        overlay.classList.add('show');
+        overlay.classList.add('active');
     });
 
-
+    // Update status
+    document.getElementById('status').textContent = `📂 Đang xem: ${node.label} (Nắm đấm để thoát)`;
 }
 
 function exitDetailView() {
@@ -171,14 +179,18 @@ function exitDetailView() {
     currentDetailNode = null;
 
     const overlay = document.getElementById('detail-overlay');
+    const videoFrame = document.getElementById('detail-video');
+
+    // Stop video
+    videoFrame.src = '';
 
     // Hide overlay with animation
-    overlay.classList.remove('show');
+    overlay.classList.remove('active');
     setTimeout(() => {
         overlay.style.display = 'none';
-    }, 400);
+    }, 500);
 
-
+    document.getElementById('status').textContent = 'Đã quay lại Timeline chính';
     currentGestureContext = GESTURE_CONTEXT.TIMELINE;
 
 }
@@ -186,7 +198,7 @@ function exitDetailView() {
 // ==========================================
 // 3. THREE.JS INITIALIZATION
 // ==========================================
-function init3D(skipTimeline = false) {
+function init3D() {
     // CRITICAL: Prevent multiple calls (fixes missing nodes issue)
     if (isInit3DCompleted) {
         console.log('⚠️ init3D already completed, skipping to prevent scene reset');
@@ -217,12 +229,10 @@ function init3D(skipTimeline = false) {
     timelineGroup = new THREE.Group();
     scene.add(timelineGroup);
 
-    // Chỉ tạo timeline mặc định nếu không bỏ qua
-    if (!skipTimeline) {
-        createTimeline();
-        createNodes();
-        createConnections();
-    }
+    // Create elements
+    createTimeline();
+    createNodes();
+    createConnections();
 
     // Only start loop if not already running
     if (!window.animationLoopStarted) {
@@ -251,15 +261,13 @@ function createTimeline() {
     // 1. TẠO ĐƯỜNG CONG (Curve)
     // Bạn có thể chỉnh các điểm Vector3 ở đây để đổi hình dáng đường line
     const curve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-CONFIG.timelineLength - 50, 20, 0),  // Đầu xa nhất
-        new THREE.Vector3(-200, 40, 0),    // Đỉnh sóng 1
-        new THREE.Vector3(-100, -30, 0),   // Đáy sóng 1
-        new THREE.Vector3(0, 40, 0),    // Đỉnh sóng 2
-        new THREE.Vector3(100, -30, 0),      // Đáy sóng trung tâm
-        new THREE.Vector3(200, 40, 0),     // Đỉnh sóng 3
-        new THREE.Vector3(300, -30, 0),    // Đáy sóng 3
-        new THREE.Vector3(400, 40, 0),      // Đỉnh sóng 4
-        new THREE.Vector3(CONFIG.timelineLength + 50, -20, 0)   // Điểm 7 - Cuối xa phải
+        new THREE.Vector3(-CONFIG.timelineLength - 50, 20, 0), // Điểm đầu xa
+        new THREE.Vector3(-CONFIG.timelineLength, 0, 0),
+        new THREE.Vector3(-50, 5, 20),
+        new THREE.Vector3(0, 0, 0),       // Điểm giữa
+        new THREE.Vector3(50, -5, -20),
+        new THREE.Vector3(CONFIG.timelineLength, 0, 0),
+        new THREE.Vector3(CONFIG.timelineLength + 50, -20, 0)  // Điểm cuối xa
     ]);
 
     // Save globally for connections
@@ -267,7 +275,7 @@ function createTimeline() {
 
     // 2. TẠO HÌNH KHỐI (Geometry) - Dùng TubeGeometry để có độ dày
     // Tham số thứ 3 (2) là RADIUS (Độ to). Chỉnh số này để to/nhỏ.
-    const tubeGeometry = new THREE.TubeGeometry(curve, 100, 3, 8, false);
+    const tubeGeometry = new THREE.TubeGeometry(curve, 100, 2, 8, false);
 
     // 3. MATERIAL CHÍNH (Lõi vàng sáng)
     const material = new THREE.MeshBasicMaterial({
@@ -296,42 +304,8 @@ function createTimeline() {
 // ==========================================
 // 7. NODES (Interactive Points)
 // ==========================================
-// Tính toán vị trí Y thực tế của node dựa trên position và offsetY
-function calculateNodeY(nodeData) {
-    // Tìm điểm trên đường cong chính tại vị trí x của node
-    let baseY = 0;
-    if (mainTimelineCurve) {
-        const curvePoints = mainTimelineCurve.getPoints(200);
-        let closestP = curvePoints[0];
-        let minDiff = Math.abs(closestP.x - nodeData.x);
-
-        for (let p of curvePoints) {
-            const diff = Math.abs(p.x - nodeData.x);
-            if (diff < minDiff) {
-                minDiff = diff;
-                closestP = p;
-            }
-        }
-        baseY = closestP.y;
-    }
-
-    // Tính Y dựa trên position và offsetY
-    const offset = nodeData.offsetY || 40;
-    if (nodeData.position === "above") {
-        return baseY + offset;
-    } else {
-        return baseY - offset;
-    }
-}
-
 function createNodes() {
     timelineData.nodes.forEach(nodeData => {
-        // ⭐ TÍNH TOÁN VỊ TRÍ Y TỪ CẤU TRÚC MỚI
-        const nodeY = calculateNodeY(nodeData);
-
-        // Lưu lại vị trí Y đã tính toán để dùng ở các function khác
-        nodeData.y = nodeY;
-
         // Node sphere
         const geometry = new THREE.SphereGeometry(CONFIG.nodeRadius, 32, 32);
         const material = new THREE.MeshBasicMaterial({
@@ -341,12 +315,12 @@ function createNodes() {
         });
 
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(nodeData.x, nodeY, 0);
+        mesh.position.set(nodeData.x, nodeData.y, 0);
         mesh.userData = nodeData;
         timelineGroup.add(mesh);
         nodeMeshes.push(mesh);
 
-        // Glow ring around node (vòng đứt quãng như hình tham khảo)
+        // Glow ring around node
         const ringGeo = new THREE.RingGeometry(CONFIG.nodeRadius + 2, CONFIG.nodeRadius + 4, 32);
         const ringMat = new THREE.MeshBasicMaterial({
             color: nodeData.color,
@@ -355,14 +329,14 @@ function createNodes() {
             side: THREE.DoubleSide
         });
         const ring = new THREE.Mesh(ringGeo, ringMat);
-        ring.position.set(nodeData.x, nodeY, 0);
+        ring.position.set(nodeData.x, nodeData.y, 0);
         mesh.userData.ring = ring;
         timelineGroup.add(ring);
 
         // Node particles
         createNodeParticles(nodeData);
 
-        // Label (ở phía ĐỐI NGHỊCH với node)
+        // Label
         createNodeLabel(nodeData);
     });
 }
@@ -370,13 +344,12 @@ function createNodes() {
 function createNodeParticles(nodeData) {
     const positions = [], colors = [], phases = [];
     const count = CONFIG.nodeParticleCount;
-    const nodeY = nodeData.y;
 
     for (let i = 0; i < count; i++) {
         const angle = Math.random() * Math.PI * 2;
         const radius = 15 + Math.random() * 20;
         const x = nodeData.x + Math.cos(angle) * radius;
-        const y = nodeY + Math.sin(angle) * radius;
+        const y = nodeData.y + Math.sin(angle) * radius;
         const z = (Math.random() - 0.5) * 30;
         positions.push(x, y, z);
 
@@ -405,35 +378,7 @@ function createNodeParticles(nodeData) {
 }
 
 function createNodeLabel(nodeData) {
-    const nodeY = nodeData.y;
-
-    // ⭐ LOGIC MỚI: Label ở phía ĐỐI NGHỊCH với node
-    // Node ở trên (above) → Label ở DƯỚI đường line chính
-    // Node ở dưới (below) → Label ở TRÊN đường line chính
-
-    // Tìm vị trí Y của line chính tại x này
-    let lineY = 0;
-    if (mainTimelineCurve) {
-        const curvePoints = mainTimelineCurve.getPoints(200);
-        for (let p of curvePoints) {
-            if (Math.abs(p.x - nodeData.x) < Math.abs(curvePoints[0].x - nodeData.x)) {
-                lineY = p.y;
-            }
-        }
-    }
-
-    // Tính vị trí label (phía đối nghịch)
-    const labelOffset = 30; // Khoảng cách label từ line chính
-    let labelY;
-    if (nodeData.position === "above") {
-        // Node ở trên → Label ở dưới line
-        labelY = lineY - labelOffset;
-    } else {
-        // Node ở dưới → Label ở trên line
-        labelY = lineY + labelOffset;
-    }
-
-    // Label tên node
+    // Label dưới node (tên)
     const canvas = document.createElement('canvas');
     canvas.width = 256; canvas.height = 64;
     const ctx = canvas.getContext('2d');
@@ -449,10 +394,10 @@ function createNodeLabel(nodeData) {
     const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
     const sprite = new THREE.Sprite(material);
     sprite.scale.set(40, 10, 1);
-    sprite.position.set(nodeData.x, labelY, 0);
+    sprite.position.set(nodeData.x, nodeData.y - 18, 0);
     timelineGroup.add(sprite);
 
-    // Label năm (year) - ở gần node
+    // Label trên node (năm) - nếu có year data
     if (nodeData.year) {
         const yearCanvas = document.createElement('canvas');
         yearCanvas.width = 128; yearCanvas.height = 48;
@@ -469,10 +414,7 @@ function createNodeLabel(nodeData) {
         const yearMaterial = new THREE.SpriteMaterial({ map: yearTexture, transparent: true });
         const yearSprite = new THREE.Sprite(yearMaterial);
         yearSprite.scale.set(20, 8, 1);
-
-        // Year label gần node (offset nhỏ hơn)
-        const yearLabelOffset = (nodeData.position === "above") ? -15 : 15;
-        yearSprite.position.set(nodeData.x, nodeY + yearLabelOffset, 0);
+        yearSprite.position.set(nodeData.x, nodeData.y + 16, 0);
         timelineGroup.add(yearSprite);
     }
 }
@@ -545,368 +487,6 @@ function createConnections() {
         jointMesh.position.copy(startPoint);
         timelineGroup.add(jointMesh);
     });
-}
-
-// ==========================================
-// 8.5. CARD-SPECIFIC TIMELINE (New Feature)
-// ==========================================
-// Biến lưu trạng thái timeline hiện tại
-let currentCardId = null;
-
-// Xóa timeline hiện tại để tạo mới
-function clearCurrentTimeline() {
-    // Xóa tất cả objects trong timelineGroup, giữ lại group
-    while (timelineGroup.children.length > 0) {
-        const obj = timelineGroup.children[0];
-        if (obj.geometry) obj.geometry.dispose();
-        if (obj.material) {
-            if (Array.isArray(obj.material)) {
-                obj.material.forEach(m => m.dispose());
-            } else {
-                obj.material.dispose();
-            }
-        }
-        timelineGroup.remove(obj);
-    }
-
-    // Reset các arrays
-    nodeMeshes = [];
-    connectionLines = [];
-    nodeParticles = {};
-    mainTimelineCurve = null;
-}
-
-// TẠO TIMELINE RIÊNG CHO TỪNG CARD
-function createCardTimeline(cardId) {
-    // Tìm card data
-    const card = timelineData.cards.find(c => c.id === cardId);
-    if (!card || !card.timelineNodes || card.timelineNodes.length === 0) {
-        console.error('Card not found or has no nodes:', cardId);
-        return;
-    }
-
-    // ⭐ RESET PAN/ZOOM ĐỂ ĐẢM BẢO VIEW ĐÚNG
-    panOffset = { x: 0, y: 0 };
-    currentZoom = 1.0;
-
-    // Xóa timeline cũ
-    clearCurrentTimeline();
-    currentCardId = cardId;
-
-    const nodes = card.timelineNodes;
-    const nodeCount = nodes.length;
-
-    console.log(`Creating timeline for card ${cardId} with ${nodeCount} nodes`);
-
-    // ==========================================
-    // 1. TẠO ĐƯỜNG CONG DỰA TRÊN SỐ NODES (DYNAMIC)
-    // ==========================================
-
-    // 🎯 DYNAMIC PARAMETERS BASED ON NODE COUNT
-    // Timeline rộng hơn khi có nhiều nodes
-    const baseSpacing = 100; // Khoảng cách tối thiểu giữa các nodes
-    const totalWidth = Math.max(400, nodeCount * baseSpacing); // Tối thiểu 400, mở rộng theo số nodes
-    const nodeSpacing = totalWidth / (nodeCount + 1);
-
-    // Wave height giảm dần khi có nhiều nodes để tránh overlap
-    let waveHeight;
-    if (nodeCount <= 3) {
-        waveHeight = 40;
-    } else if (nodeCount <= 5) {
-        waveHeight = 35;
-    } else if (nodeCount <= 7) {
-        waveHeight = 30;
-    } else {
-        waveHeight = 25;
-    }
-
-    // ⭐ Nếu card có waveAmplitude riêng, dùng nó thay vì default
-    if (card.waveAmplitude !== null && card.waveAmplitude !== undefined) {
-        waveHeight = card.waveAmplitude;
-        console.log(`🌊 Card ${cardId} dùng waveAmplitude riêng: ${waveHeight}`);
-    }
-
-    // 🔍 AUTO-ZOOM: Camera zoom out cho timelines rộng hơn
-    if (nodeCount <= 3) {
-        currentZoom = 1.0;
-    } else if (nodeCount <= 5) {
-        currentZoom = 0.85;
-    } else if (nodeCount <= 7) {
-        currentZoom = 0.7;
-    } else {
-        currentZoom = 0.55; // Zoom out nhiều cho 8+ nodes
-    }
-
-    console.log(`📐 Dynamic params: width=${totalWidth}, spacing=${nodeSpacing.toFixed(1)}, wave=${waveHeight}, zoom=${currentZoom}`);
-
-    // Tạo các điểm cho đường cong
-    const curvePoints = [];
-
-    // Điểm bắt đầu (ngoài viewport bên trái)
-    curvePoints.push(new THREE.Vector3(-totalWidth / 2 - 50, 0, 0));
-
-    // Tạo sóng cho mỗi node
-    for (let i = 0; i < nodeCount; i++) {
-        const x = -totalWidth / 2 + nodeSpacing * (i + 1);
-        // Xen kẽ đỉnh/đáy: node đầu tiên ở trên, node thứ 2 ở dưới...
-        const y = (i % 2 === 0) ? waveHeight : -waveHeight;
-        curvePoints.push(new THREE.Vector3(x, y, 0));
-
-        // Cập nhật position cho node data
-        nodes[i].position = (i % 2 === 0) ? "above" : "below";
-        nodes[i].x = x;
-    }
-
-    // Điểm kết thúc (ngoài viewport bên phải)
-    curvePoints.push(new THREE.Vector3(totalWidth / 2 + 50, 0, 0));
-
-    // Tạo đường cong mượt
-    const curve = new THREE.CatmullRomCurve3(curvePoints);
-    mainTimelineCurve = curve;
-
-    // ==========================================
-    // 2. VẼ ĐƯỜNG SÓNG CHÍNH
-    // ==========================================
-    const tubeGeometry = new THREE.TubeGeometry(curve, 100, 3, 8, false);
-    const material = new THREE.MeshBasicMaterial({
-        color: 0xFFD700,
-        transparent: true,
-        opacity: 0.8
-    });
-    const timeline = new THREE.Mesh(tubeGeometry, material);
-    timelineGroup.add(timeline);
-
-    // Glow effect
-    const glowGeometry = new THREE.TubeGeometry(curve, 100, 4, 8, false);
-    const glowMaterial = new THREE.MeshBasicMaterial({
-        color: card.color || 0xFF6B6B,
-        transparent: true,
-        opacity: 0.3,
-        side: THREE.BackSide
-    });
-    const glowLine = new THREE.Mesh(glowGeometry, glowMaterial);
-    timelineGroup.add(glowLine);
-
-    // ==========================================
-    // 3. TẠO NODES VÀ LABELS
-    // ==========================================
-    nodes.forEach((nodeData, index) => {
-        // Tính vị trí Y của node trên đường cong - TÌM ĐỈNH/ĐÁY THỰC SỰ
-        const curvePointsList = curve.getPoints(300);  // Tăng độ chính xác
-
-        // Tìm các điểm trong vùng lân cận của node (±50px)
-        const nearbyPoints = curvePointsList.filter(p => Math.abs(p.x - nodeData.x) < 50);
-
-        let closestP;
-        if (nodeData.position === "above") {
-            // Node ở trên → tìm điểm có Y CAO NHẤT (đỉnh sóng)
-            closestP = nearbyPoints.reduce((max, p) => p.y > max.y ? p : max, nearbyPoints[0]);
-        } else {
-            // Node ở dưới → tìm điểm có Y THẤP NHẤT (đáy sóng)
-            closestP = nearbyPoints.reduce((min, p) => p.y < min.y ? p : min, nearbyPoints[0]);
-        }
-
-        // Cập nhật X của node để khớp với đỉnh/đáy thực sự
-        nodeData.x = closestP.x;
-
-        const baseY = closestP.y;
-        // ⭐ Dùng offsetY riêng từng node từ data.js, nếu không có thì dùng offset mặc định
-        const defaultOffset = nodeCount > 6 ? 35 : (nodeCount > 4 ? 40 : 45);
-        const offset = nodeData.offsetY !== undefined ? nodeData.offsetY : defaultOffset;
-        const nodeY = (nodeData.position === "above") ? baseY + offset : baseY - offset;
-        nodeData.y = nodeY;
-
-        // === TẠO NODE (SPHERE) ===
-        // ⭐ Dùng nodeRadius riêng từng node nếu có, nếu không thì dùng default
-        const defaultRadius = nodeCount > 6 ? 6 : (nodeCount > 4 ? 7 : 8);
-        const nodeRadius = nodeData.nodeRadius !== null && nodeData.nodeRadius !== undefined
-            ? nodeData.nodeRadius
-            : defaultRadius;
-
-        // DEBUG: Log để kiểm tra giá trị
-        console.log(`🔵 Node ${nodeData.id}: nodeRadius=${nodeRadius} (data=${nodeData.nodeRadius}), labelScale=${JSON.stringify(nodeData.labelScale)}`);
-
-        // ⭐ Dùng màu riêng từng node nếu có, nếu không thì dùng màu card
-        const nodeColor = nodeData.nodeColor !== null && nodeData.nodeColor !== undefined
-            ? nodeData.nodeColor
-            : (card.color || 0xFFD700);
-
-        // 🔵 Node dạng 2D Circle (luôn hiện hình tròn)
-        const geometry = new THREE.CircleGeometry(nodeRadius, 32);
-        const nodeMaterial = new THREE.MeshBasicMaterial({
-            color: nodeColor,
-            transparent: true,
-            opacity: 0.9,
-            side: THREE.DoubleSide  // Nhìn từ cả 2 phía
-        });
-        const mesh = new THREE.Mesh(geometry, nodeMaterial);
-        mesh.position.set(nodeData.x, nodeY, 5);  // z=5: Node ở TRƯỚC
-        mesh.userData = nodeData;
-        timelineGroup.add(mesh);
-        nodeMeshes.push(mesh);
-
-        // === GLOW RING QUANH NODE ===
-        const ringGeo = new THREE.RingGeometry(nodeRadius + 2, nodeRadius + 4, 32);
-        const ringMat = new THREE.MeshBasicMaterial({
-            color: card.color || 0xFFD700,
-            transparent: true,
-            opacity: 0.3,
-            side: THREE.DoubleSide
-        });
-        const ring = new THREE.Mesh(ringGeo, ringMat);
-        ring.position.set(nodeData.x, nodeY, 4);  // z=4: Ring ngay sau node
-        mesh.userData.ring = ring;
-        timelineGroup.add(ring);
-
-        // === ĐƯỜNG KẾT NỐI TỪ WAVE ĐẾN NODE ===
-        const startPoint = closestP.clone();
-        startPoint.z = -2;  // Bắt đầu từ phía sau wave
-        const endPoint = new THREE.Vector3(nodeData.x, nodeY, 3);  // Kết thúc SÁT node (z=3, node ở z=5)
-        const midPoint = new THREE.Vector3(nodeData.x, (startPoint.y + nodeY) / 2, -1);
-
-        const connectionCurve = new THREE.QuadraticBezierCurve3(startPoint, midPoint, endPoint);
-        const connGeometry = new THREE.TubeGeometry(connectionCurve, 20, 0.8, 8, false);
-        const connMaterial = new THREE.MeshBasicMaterial({
-            color: 0xFFD700,
-            transparent: true,
-            opacity: 0.8
-        });
-        const connMesh = new THREE.Mesh(connGeometry, connMaterial);
-        connectionLines.push(connMesh);
-        timelineGroup.add(connMesh);
-
-        // === JOINT (KHỚP NỐI) ===
-        const jointGeo = new THREE.SphereGeometry(2.5, 16, 16);
-        const jointMesh = new THREE.Mesh(jointGeo, connMaterial);
-        jointMesh.position.copy(startPoint);
-        timelineGroup.add(jointMesh);
-
-        // === LABEL (Ở PHÍA ĐỐI NGHỊCH VỚI NODE) ===
-        // Dynamic offset dựa trên số nodes
-        const labelOffset = nodeCount > 6 ? 30 : 35;
-        let labelY;
-        if (nodeData.position === "above") {
-            labelY = baseY - labelOffset; // Node trên → Label dưới
-        } else {
-            labelY = baseY + labelOffset; // Node dưới → Label trên
-        }
-
-        // Tạo label với khung nền mờ
-        const labelCanvas = document.createElement('canvas');
-        labelCanvas.width = 512;
-        labelCanvas.height = 100;
-        const ctx = labelCanvas.getContext('2d');
-// THỬ TẮT NỀN Ở ĐÂY
-        // Vẽ nền mờ
-        ctx.fillStyle = 'rgba(104, 101, 92, 0.6)';
-        ctx.roundRect(10, 10, 492, 80, 10);
-        ctx.fill();
-
-        // Vẽ viền
-        ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Dynamic font sizes based on node count
-        //const yearFontSize = nodeCount > 6 ? 18 : (nodeCount > 4 ? 20 : 22);
-        // const titleFontSize = nodeCount > 6 ? 14 : (nodeCount > 4 ? 16 : 18);
-        const yearFontSize = 28;   // Font năm to
-        const titleFontSize = 20;  // Font title to
-        // Vẽ năm (year) - nếu có
-        if (nodeData.year) {
-            ctx.font = `bold ${yearFontSize}px Segoe UI`;
-            ctx.fillStyle = '#FFD700';
-            ctx.textAlign = 'center';
-            ctx.shadowColor = 'rgba(0,0,0,0.8)';
-            ctx.shadowBlur = 4;
-            ctx.fillText(nodeData.year, 256, 40);
-        }
-
-        // Vẽ title
-        ctx.font = `${titleFontSize}px Segoe UI`;
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillText(nodeData.title, 256, nodeData.year ? 70 : 55);
-
-        const labelTexture = new THREE.CanvasTexture(labelCanvas);
-        const labelMaterial = new THREE.SpriteMaterial({ map: labelTexture, transparent: true });
-        const labelSprite = new THREE.Sprite(labelMaterial);
-
-        // ⭐ Dùng labelScale riêng từng node nếu có, nếu không thì dùng default
-        let defaultLabelScale;
-        if (nodeCount <= 3) {
-            defaultLabelScale = { x: 70, y: 15 };
-        } else if (nodeCount <= 5) {
-            defaultLabelScale = { x: 60, y: 13 };
-        } else if (nodeCount <= 7) {
-            defaultLabelScale = { x: 50, y: 11 };
-        } else {
-            defaultLabelScale = { x: 45, y: 10 };
-        }
-        const labelScale = nodeData.labelScale !== null && nodeData.labelScale !== undefined
-            ? nodeData.labelScale
-            : defaultLabelScale;
-
-        labelSprite.scale.set(labelScale.x, labelScale.y, 1);
-        labelSprite.position.set(nodeData.x, labelY, 0);
-        timelineGroup.add(labelSprite);
-
-        // ⭐ TẠO PARTICLES CHO NODE (dùng màu riêng nếu có)
-        createNodeParticles(nodeData, nodeColor);
-    });
-
-    console.log(`✅ Card ${cardId} timeline created with ${nodeCount} nodes`);
-}
-
-// ==========================================
-// TẠO PARTICLES BAY XUNG QUANH NODE
-// ==========================================
-function createNodeParticles(nodeData, nodeColor) {
-    const positions = [], colors = [], phases = [];
-    const count = 20; // Số lượng hạt mỗi node (có thể điều chỉnh)
-
-    for (let i = 0; i < count; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const radius = 15 + Math.random() * 20;
-        const x = nodeData.x + Math.cos(angle) * radius;
-        const y = nodeData.y + Math.sin(angle) * radius;
-        const z = (Math.random() - 0.5) * 30;
-        positions.push(x, y, z);
-
-        const color = new THREE.Color(nodeColor || 0xFFD700);
-        colors.push(color.r, color.g, color.b);
-        phases.push(Math.random() * Math.PI * 2);
-    }
-
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    geo.userData = { phases, nodeData, originalPositions: [...positions] };
-
-    const mat = new THREE.PointsMaterial({
-        size: 3.5,              // Kích cỡ hạt
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.3,           // Độ trong suốt
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-    });
-
-    const particles = new THREE.Points(geo, mat);
-    nodeParticles[nodeData.id || nodeData.year] = particles;
-    timelineGroup.add(particles);
-}
-
-// Quay lại timeline tổng quan (6 cards chính)
-function showMainTimeline() {
-    clearCurrentTimeline();
-    currentCardId = null;
-
-    // Tạo lại timeline chính với 6 nodes tổng quan
-    createTimeline();
-    createNodes();
-    createConnections();
-
-    console.log('✅ Returned to main timeline');
 }
 
 // ==========================================
@@ -1320,9 +900,8 @@ const GESTURE_CONTEXT = {
 
 let currentGestureContext = null;
 
-
 // Carousel
-// currentCardIndex moved to global variables section at top
+let currentCardIndex = 1; // Start at index 1 (center visual balance)
 let currentActiveCard = null;
 
 function getTotalCards() {
@@ -1496,11 +1075,8 @@ function toggleAudio(forcePlay = false) {
     }
 }
 
-
-// function to navigate cards
 function navigateCards(direction) {
-    const cards = document.querySelectorAll('.node-card');
-    const totalCards = cards.length;
+    const totalCards = getTotalCards();
     const newIndex = currentCardIndex + direction;
 
     if (newIndex < 0 || newIndex >= totalCards) return;
@@ -1591,15 +1167,11 @@ function selectCard(cardId) {
     // CRITICAL: Ensure 3D is initialized before showing canvas
     if (!isInit3DCompleted) {
         console.log('⚠️ 3D not initialized yet, initializing now...');
-        init3D(true);  // true = skip default timeline since we'll create card-specific one
+        init3D();
         console.log('✅ init3D() completed');
         console.log('🔍 After init - Scene:', !!scene);
         console.log('🔍 After init - nodeMeshes:', nodeMeshes.length);
     }
-
-    // ⭐ TẠO TIMELINE RIÊNG CHO CARD NÀY
-    console.log('🎨 Creating card-specific timeline...');
-    createCardTimeline(cardId);
 
     // Ẩn carousel
     console.log('👁️ Hiding carousel...');
@@ -1626,11 +1198,18 @@ function selectCard(cardId) {
     // Hiện nút back
     document.getElementById('global-back-btn').style.display = 'block';
 
-    // Cập nhật title từ dữ liệu cards
-    const card = timelineData.cards.find(c => c.id === cardId);
-    if (card) {
-        document.getElementById('title').textContent = `☭ ${card.title}`;
-    }
+    // Cập nhật title theo card
+    const cardTitles = {
+        1: "Trước 1848: Bối cảnh ra đời",
+        2: "1840s – 1850s: Ra đời Chủ nghĩa Marx",
+        3: "1860s - 1890s: Hoàn thiện lý thuyết",
+        4: "1900s - 1920s: Chủ nghĩa Mác phát triển thành Mác – Lênin",
+        5: "1950s - 1980s: Chiến tranh Lạnh và mở rộng",
+        6: "1980s - 1990s: Suy thoái",
+        7: "2000s - Hiện tại (2026)"
+    };
+
+    document.getElementById('title').textContent = `☭ ${cardTitles[cardId] || 'TRIẾT HỌC MARX-LENIN'}`;
 
     // Lưu current card
     currentActiveCard = cardId;
@@ -1671,9 +1250,8 @@ function exitTimelineView() {
     // Hiện lại carousel
     document.getElementById('node-cards-container').style.display = 'flex';
 
-    // Reset current card & timeline state
+    // Reset current card
     currentActiveCard = null;
-    currentCardId = null; // ⭐ IMPORTANT: Reset để goBack() biết đang ở carousel
 
     // Back button remains visible (for Carousel -> Welcome)
     document.getElementById('global-back-btn').style.display = 'block';
@@ -1866,7 +1444,7 @@ document.addEventListener('dblclick', (e) => {
             animateNodeZoom(nodeMesh, () => {
                 openDetailView(fullNode);
             });
-
+            document.getElementById('status').textContent = `Mở chi tiết: ${fullNode.label}`;
         }
     }
 });
@@ -1878,7 +1456,7 @@ document.addEventListener('wheel', (e) => {
     e.preventDefault();
     const zoomDelta = e.deltaY > 0 ? -0.05 : 0.05;
     currentZoom = Math.max(CONFIG.zoomMin, Math.min(CONFIG.zoomMax, currentZoom + zoomDelta));
-
+    document.getElementById('status').textContent = `Zoom: ${(currentZoom * 100).toFixed(0)}%`;
 }, { passive: false });
 
 // Right click - exit detail view or reset
@@ -1892,7 +1470,7 @@ document.addEventListener('contextmenu', (e) => {
         currentZoom = 1.0;
         selectedNode = null;
         document.getElementById('node-info').style.display = 'none';
-
+        document.getElementById('status').textContent = 'Đã reset vị trí';
     }
 });
 
@@ -1915,132 +1493,4 @@ document.addEventListener('keydown', (e) => {
         // Select current active card
         selectCard(currentCardIndex + 1); // +1 because cards are 1-indexed
     }
-});
-
-// ==========================================
-// CARD CLICK HANDLERS - Kết nối click vào card với createCardTimeline
-// ==========================================
-
-// Thêm click listeners cho các cards khi DOM load xong
-document.addEventListener('DOMContentLoaded', () => {
-    // Delay để đảm bảo cards đã được tạo xong
-    setTimeout(() => {
-        initCarouselControls();
-    }, 100);
-});
-
-// NEW: Hàm khởi tạo carousel controls
-function initCarouselControls() {
-    const container = document.getElementById('node-cards-container');
-    const cards = document.querySelectorAll('.node-card');
-
-    // CLICK LOGIC - Di chuyển từng bước
-    cards.forEach((card, index) => {
-        card.onclick = () => {
-            const cardId = parseInt(card.dataset.nodeId);
-
-            if (index === currentCardIndex) {
-                // Click center card -> ENTER timeline
-                console.log('🎯 Clicked Center Card -> Enter 3D');
-                selectCard(cardId);
-            } else if (index < currentCardIndex) {
-                // Click card bên TRÁI -> Di chuyển 1 bước sang trái
-                console.log('← Clicked Left Card -> Navigate Left');
-                navigateCards(-1);
-            } else {
-                // Click card bên PHẢI -> Di chuyển 1 bước sang phải
-                console.log('→ Clicked Right Card -> Navigate Right');
-                navigateCards(1);
-            }
-        };
-    });
-
-    // WHEEL LOGIC (Scroll) - Lăn chuột để di chuyển
-    let lastWheelTime = 0;
-    container.onwheel = (e) => {
-        // Throttle wheel events (500ms giữa mỗi lần)
-        if (Date.now() - lastWheelTime < 500) return;
-        lastWheelTime = Date.now();
-
-        if (e.deltaY > 0) {
-            navigateCards(1);  // Scroll xuống -> sang phải
-        } else {
-            navigateCards(-1); // Scroll lên -> sang trái
-        }
-    };
-
-    console.log('✅ Card click + wheel handlers initialized for', cards.length, 'cards');
-}
-
-// Cập nhật goBack() để xử lý cả card timeline
-function goBack() {
-    // Nếu đang xem detail (thông tin chi tiết node)
-    if (isInDetailView) {
-        exitDetailView();
-        return;
-    }
-
-    // Nếu đang xem timeline của một card cụ thể
-    if (currentCardId !== null) {
-        // Quay về carousel (không phải main timeline)
-        exitTimelineView();
-        return;
-    }
-
-    // Mặc định: về Welcome Screen
-    document.getElementById('node-cards-container').style.display = 'none';
-    document.getElementById('canvas-container').style.display = 'none';
-    document.getElementById('header').style.display = 'none';
-    document.getElementById('global-back-btn').style.display = 'none';
-    document.getElementById('welcome-overlay').style.display = 'flex';
-
-    stopMediaPipe();
-    currentGestureContext = GESTURE_CONTEXT.WELCOME;
-}
-
-// ==========================================
-// NODE CLICK HANDLER - Raycaster để detect click trên nodes
-// ==========================================
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-
-function onCanvasClick(event) {
-    // Chỉ xử lý khi đang ở timeline view và chưa mở detail
-    if (isInDetailView || currentCardId === null) return;
-
-    const rect = renderer.domElement.getBoundingClientRect();
-
-    // Convert mouse position to normalized device coordinates (-1 to +1)
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    // Update raycaster
-    raycaster.setFromCamera(mouse, camera);
-
-    // Check for intersections with node meshes
-    const intersects = raycaster.intersectObjects(nodeMeshes);
-
-    if (intersects.length > 0) {
-        const clickedNode = intersects[0].object;
-        const nodeData = clickedNode.userData;
-
-        console.log('🎯 Node clicked:', nodeData.title || nodeData.year);
-
-        // Animate zoom before opening detail view
-        animateNodeZoom(clickedNode, () => {
-            openDetailView(nodeData);
-        });
-    }
-}
-
-// Add click listener when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    // Wait a bit for renderer to be created
-    setTimeout(() => {
-        const canvasContainer = document.getElementById('canvas-container');
-        if (canvasContainer) {
-            canvasContainer.addEventListener('click', onCanvasClick);
-            console.log('✅ Node click handler attached to canvas');
-        }
-    }, 1000);
 });

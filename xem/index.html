@@ -13,9 +13,6 @@
         crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 
-    <!-- GSAP Animation Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -29,30 +26,7 @@
     <!-- Welcome Screen -->
     <div id="welcome-overlay">
         <div id="welcome-container">
-            <h1 id="welcome-title">
-                <span class="title-char">☭</span>
-                <span class="title-char">&nbsp;</span>
-                <span class="title-char">T</span>
-                <span class="title-char">R</span>
-                <span class="title-char">I</span>
-                <span class="title-char">Ế</span>
-                <span class="title-char">T</span>
-                <span class="title-char">&nbsp;</span>
-                <span class="title-char">H</span>
-                <span class="title-char">Ọ</span>
-                <span class="title-char">C</span>
-                <span class="title-char">&nbsp;</span>
-                <span class="title-char">M</span>
-                <span class="title-char">A</span>
-                <span class="title-char">R</span>
-                <span class="title-char">X</span>
-                <span class="title-char">-</span>
-                <span class="title-char">L</span>
-                <span class="title-char">E</span>
-                <span class="title-char">N</span>
-                <span class="title-char">I</span>
-                <span class="title-char">N</span>
-            </h1>
+            <h1 id="welcome-title">☭ TRIẾT HỌC MARX-LENIN</h1>
             <p id="welcome-subtitle">Khám phá dòng chảy lịch sử</p>
 
             <div id="welcome-options">
@@ -78,7 +52,7 @@
     <!-- Header -->
     <div id="header" style="display: none;">
         <div id="title">☭ TRIẾT HỌC MARX-LENIN</div>
-        <canvas id="camera-preview" style="display: none;"></canvas>
+        <canvas id="camera-preview"></canvas>
     </div>
 
     <!-- Carousel Cards Container -->
@@ -93,8 +67,8 @@
                         ☭</div>
                 </div>
                 <div class="card-content">
-                    <h3 class="card-title">Trước 1840s – 1890s</h3>
-                    <p class="card-desc">Sự ra đời và hoàn thiện của chủ nghĩa Marx</p>
+                    <h3 class="card-title">Khởi đầu</h3>
+                    <p class="card-desc">Chủ nghĩa Mác: Lý luận cách mạng</p>
                 </div>
             </div>
 
@@ -105,8 +79,8 @@
                         ⚒️</div>
                 </div>
                 <div class="card-content">
-                    <h3 class="card-title">1900s – 1920s</h3>
-                    <p class="card-desc">Từ lý luận Marx đến thực tiễn Lenin</p>
+                    <h3 class="card-title">Thử thách</h3>
+                    <p class="card-desc">Đấu tranh giai cấp & Cách mạng Công nghiệp</p>
                 </div>
             </div>
 
@@ -117,8 +91,8 @@
                         📚</div>
                 </div>
                 <div class="card-content">
-                    <h3 class="card-title">1920s – 1945</h3>
-                    <p class="card-desc">Củng cố mô hình XHCN và ảnh hưởng trong phong trào cách mạng thế giới</p>
+                    <h3 class="card-title">Kinh nghiệm</h3>
+                    <p class="card-desc">Cách mạng Tháng Mười & Xây dựng XHCN</p>
                 </div>
             </div>
 
@@ -129,8 +103,8 @@
                         🌏</div>
                 </div>
                 <div class="card-content">
-                    <h3 class="card-title">1947 – 1970s</h3>
-                    <p class="card-desc">Mở rộng hệ thống XHCN trong bối cảnh Chiến tranh Lạnh</p>
+                    <h3 class="card-title">Thực tiễn</h3>
+                    <p class="card-desc">Thực tiễn Việt Nam</p>
                 </div>
             </div>
 
@@ -138,11 +112,11 @@
                 <div class="card-image">
                     <div
                         style="width:100%;height:100%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:48px;">
-                        🔄</div>
+                        🎓</div>
                 </div>
                 <div class="card-content">
-                    <h3 class="card-title">1980s – 2000s</h3>
-                    <p class="card-desc">Khủng hoảng và tan rã của hệ thống XHCN. Tái định hình con đường phát triển</p>
+                    <h3 class="card-title">Thế giới quan</h3>
+                    <p class="card-desc">Chủ nghĩa duy vật biện chứng</p>
                 </div>
             </div>
 
@@ -150,11 +124,23 @@
                 <div class="card-image">
                     <div
                         style="width:100%;height:100%;background:linear-gradient(135deg,#f093fb,#f5576c);display:flex;align-items:center;justify-content:center;font-size:48px;">
-                        🌐</div>
+                        💡</div>
                 </div>
                 <div class="card-content">
-                    <h3 class="card-title">2000s – Nay</h3>
-                    <p class="card-desc">Tác động đương đại của chủ nghĩa Marx–Lenin trong bối cảnh toàn cầu</p>
+                    <h3 class="card-title">Nhận thức</h3>
+                    <p class="card-desc">Chủ nghĩa duy vật lịch sử</p>
+                </div>
+            </div>
+
+            <div class="node-card" data-node-id="7">
+                <div class="card-image">
+                    <div
+                        style="width:100%;height:100%;background:linear-gradient(135deg,#fa709a,#fee140);display:flex;align-items:center;justify-content:center;font-size:48px;">
+                        🚩</div>
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Đích đến</h3>
+                    <p class="card-desc">Chủ nghĩa Cộng sản: Thế giới đại đồng</p>
                 </div>
             </div>
         </div>
@@ -204,7 +190,7 @@
     <button id="btnStart" onclick="startSystem()" style="display: none;">🖐 START WITH GESTURES</button>
 
     <!-- Status -->
-    <!-- Status removed -->
+    <div id="status" style="display: none;">Đang chờ khởi động...</div>
 
     <!-- Node Info Panel -->
     <div id="node-info">
@@ -246,29 +232,31 @@
     <!-- Detail View Overlay (Drill-down) -->
     <div id="detail-overlay">
         <div id="detail-container">
-            <!-- Title -->
-            <h1 id="detail-title">Thử thách</h1>
+            <div id="detail-header">
+                <!-- Removed redundant detail-back button -->
+                <h1 id="detail-title">Node Title</h1>
+            </div>
 
-            <!-- Quote / Description -->
-            <div id="detail-quote">
-                Không có hành trình nào mà không có thử thách. Đây là giai đoạn đối mặt với những khó khăn, học cách
-                thích nghi và tìm ra giải pháp sáng tạo.
+            <div id="detail-description">
+                Mô tả chi tiết về node này...
+            </div>
+
+            <!-- Video Section -->
+            <div class="detail-section" id="video-section" style="display: none;">
+                <h3 class="detail-section-title">🎥 Video</h3>
+                <iframe id="detail-video" src="" frameborder="0" allowfullscreen></iframe>
             </div>
 
             <!-- Events Timeline -->
-            <div class="detail-section" id="events-section">
+            <div class="detail-section" id="events-section" style="display: none;">
                 <h3 class="detail-section-title">📅 Sự kiện</h3>
-                <div id="detail-events">
-                    <!-- Events will be dynamically inserted here -->
-                </div>
+                <div id="detail-events"></div>
             </div>
 
             <!-- Sub-nodes -->
-            <div class="detail-section" id="subnodes-section">
+            <div class="detail-section" id="subnodes-section" style="display: none;">
                 <h3 class="detail-section-title">🌿 Nhánh con</h3>
-                <div id="detail-subnodes">
-                    <!-- Sub-nodes will be dynamically inserted here -->
-                </div>
+                <div id="detail-subnodes"></div>
             </div>
         </div>
 
@@ -289,62 +277,6 @@
 
     <script src="data.js"></script>
     <script src="script.js"></script>
-
-    <!-- GSAP Title Scatter Animation -->
-    <script>
-        // Wait for DOM to load
-        document.addEventListener('DOMContentLoaded', function () {
-            const chars = document.querySelectorAll('.title-char');
-
-            // Helper function to get random value
-            function getRandom(min, max) {
-                return Math.random() * (max - min) + min;
-            }
-
-            // Set initial state - scattered positions
-            chars.forEach((char, index) => {
-                gsap.set(char, {
-                    x: getRandom(-600, 600),
-                    y: getRandom(-400, 400),
-                    rotation: getRandom(-720, 720),
-                    scale: 0,
-                    opacity: 0
-                });
-            });
-
-            // Create timeline for animation
-            const tl = gsap.timeline({
-                delay: 0.3
-            });
-
-            // Animate each character to its final position
-            tl.to(chars, {
-                x: 0,
-                y: 0,
-                rotation: 0,
-                scale: 1,
-                opacity: 1,
-                duration: 1.2,
-                ease: "power4.out",
-                stagger: {
-                    each: 0.05,
-                    from: "center"
-                }
-            });
-
-            // Add glow pulse after assembly
-            tl.to(chars, {
-                textShadow: "0 0 30px rgba(255, 204, 0, 1), 0 0 60px rgba(255, 204, 0, 0.8)",
-                duration: 0.3,
-                stagger: 0.02
-            });
-
-            tl.to(chars, {
-                textShadow: "0 0 20px rgba(255, 204, 0, 0.5)",
-                duration: 0.5
-            });
-        });
-    </script>
 </body>
 
 </html>

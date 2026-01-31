@@ -42,144 +42,362 @@ function cacheDOMElements() {
 }
 
 // sửa node ở đây
+// ==========================================
+// CẤU TRÚC MỚI:
+// - Mỗi CARD (thẻ) có một mảng timelineNodes riêng
+// - Mỗi node con có: year, title (label), position, offsetY, image
+// - position xen kẽ: above → below → above...
+// - Label có khung với nền mờ ở phía ĐỐI NGHỊCH với node
+// ==========================================
 const timelineData = {
-    nodes: [
+    // 6 CARDS chính (hiển thị trong carousel)
+    cards: [
         {
             id: 1,
-            label: "Khởi đầu",
-            year: "1848",
-            desc: "Điểm xuất phát của hành trình",
-            x: -100, y: 60,
-            children: [2, 3],
+            title: "Trước 1840s – 1890s",
+            desc: "Sự ra đời và hoàn thiện của chủ nghĩa Marx",
             color: 0xFF6B6B,
-            content: {
-                description: "Đây là giai đoạn khởi đầu của hành trình. Mọi thứ bắt đầu từ một ý tưởng nhỏ, một ước mơ lớn. Giai đoạn này đặt nền móng cho tất cả những gì sẽ đến sau.",
-                video: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-                events: [
-                    { date: "01/2024", title: "Bắt đầu dự án", desc: "Lên ý tưởng và phác thảo kế hoạch ban đầu" },
-                    { date: "02/2024", title: "Nghiên cứu thị trường", desc: "Tìm hiểu nhu cầu và đối thủ cạnh tranh" }
-                ],
-                subNodes: [
-                    { id: "1a", label: "Brainstorm", desc: "Thu thập và phát triển ý tưởng sáng tạo" },
-                    { id: "1b", label: "Lập kế hoạch", desc: "Xây dựng roadmap chi tiết cho dự án" }
-                ]
-            }
+            // === TÙY CHỈNH ĐỘ CONG SÓNG CHO TIMELINE NÀY ===
+            waveAmplitude: 30,  // Độ cao sóng (px). null = tự động, số lớn = cong hơn
+            // CÁC NODE CON của card này (hiển thị khi click vào card)
+            timelineNodes: [
+                {
+                    id: "1-1",
+                    year: "Trước 1840s",
+                    title: "Bối cảnh bấy giờ",
+                    position: "above",
+                    // === TÙY CHỈNH RIÊNG CHO NODE NÀY ===
+                    offsetY: 20,           // Khoảng cách từ line (pixel)
+                    nodeRadius: 10,      // null = dùng mặc định, hoặc số (vd: 10)
+                    labelScale: { x: 80, y: 18 },      // null = mặc định, hoặc {x: 60, y: 13}
+                    nodeColor: null,       // null = dùng màu card, hoặc hex (vd: 0xFF0000)
+                    image: null
+                },
+                {
+                    id: "1-2",
+                    year: "1840s – 1850s",
+                    title: "Sự ra đời của chủ nghĩa Marx",
+                    position: "below",
+                    offsetY: 20,
+                    nodeRadius: null,
+                    labelScale: null,
+                    nodeColor: null,
+                    image: null
+                },
+                {
+                    id: "1-3",
+                    year: "1860s – 1890s",
+                    title: "Hoàn thiện học thuyết Marx",
+                    position: "above",
+                    offsetY: 20,
+                    nodeRadius: null,
+                    labelScale: null,
+                    nodeColor: null,
+                    image: null
+                }
+            ]
         },
         {
             id: 2,
-            label: "Phát triển",
-            year: "1867",
-            desc: "Giai đoạn phát triển và học hỏi",
-            x: -30, y: -50,
-            parent: 1,
-            children: [4],
+            title: "1900s – 1920s",
+            desc: "Từ lý luận Marx đến thực tiễn Lenin",
             color: 0x4ECDC4,
-            content: {
-                description: "Giai đoạn phát triển là thời điểm biến ý tưởng thành hiện thực. Đây là lúc học hỏi các kỹ năng mới, xây dựng sản phẩm và liên tục cải tiến.",
-                video: "https://www.youtube.com/embed/jNQXAC9IVRw",
-                events: [
-                    { date: "03/2024", title: "Prototype v1", desc: "Hoàn thành phiên bản thử nghiệm đầu tiên" },
-                    { date: "04/2024", title: "User Testing", desc: "Thu thập feedback từ người dùng thử nghiệm" },
-                    { date: "05/2024", title: "Iteration", desc: "Cải tiến dựa trên phản hồi" }
-                ],
-                subNodes: [
-                    { id: "2a", label: "Coding", desc: "Viết code và xây dựng tính năng" },
-                    { id: "2b", label: "Design", desc: "Thiết kế giao diện người dùng" },
-                    { id: "2c", label: "Testing", desc: "Kiểm thử và đảm bảo chất lượng" }
-                ]
-            }
+            timelineNodes: [
+                {
+                    id: "2-1",
+                    year: "1870–1900",
+                    title: "Bối cảnh bấy giờ",
+                    position: "above",
+                    offsetY: 20,
+                    image: null
+                },
+                {
+                    id: "2-2",
+                    year: "1898 – 1918",
+                    title: "Đảng Lao động Dân chủ Xã hội Nga",
+                    position: "below",
+                    offsetY: 20,
+                    image: null
+                },
+                {
+                    id: "2-3",
+                    year: "1905 – 1907",
+                    title: "Cách mạng Nga",
+                    position: "above",
+                    offsetY: 20,
+                    image: null
+                },
+                {
+                    id: "2-4",
+                    year: "1914–1917",
+                    title: "Nước Nga trong chiến tranh thế giới thứ nhất",
+                    position: "below",
+                    offsetY: 20,
+                    image: null
+                },
+                {
+                    id: "2-5",
+                    year: "1917",
+                    title: "Cách mạng Tháng Mười Nga",
+                    position: "above",
+                    offsetY: 20,
+                    image: null
+                },
+                {
+                    id: "2-6",
+                    year: "1919",
+                    title: "Thành lập Quốc tế Cộng sản",
+                    position: "below",
+                    offsetY: 20,
+                    image: null
+                }
+            ]
         },
         {
             id: 3,
-            label: "Thử thách",
-            year: "1917",
-            desc: "Những khó khăn cần vượt qua",
-            x: -30, y: 50,
-            parent: 1,
-            children: [5],
+            title: "1920s – 1945",
+            desc: "Củng cố mô hình XHCN và ảnh hưởng trong phong trào cách mạng thế giới",
             color: 0xFFE66D,
-            content: {
-                description: "Không có hành trình nào mà không có thử thách. Đây là giai đoạn đối mặt với những khó khăn, học cách thích nghi và tìm ra giải pháp sáng tạo.",
-                events: [
-                    { date: "06/2024", title: "Bug lớn", desc: "Phát hiện và sửa lỗi nghiêm trọng trong hệ thống" },
-                    { date: "07/2024", title: "Thay đổi yêu cầu", desc: "Khách hàng thay đổi yêu cầu giữa chừng" }
-                ],
-                subNodes: [
-                    { id: "3a", label: "Problem Solving", desc: "Phân tích và giải quyết vấn đề" },
-                    { id: "3b", label: "Adaptation", desc: "Thích nghi với thay đổi" }
-                ]
-            }
+            timelineNodes: [
+                {
+                    id: "3-1",
+                    year: "1921",
+                    title: "Thành lập Đảng Cộng sản Trung Quốc",
+                    position: "above",
+                    offsetY: 20,
+                    image: null
+                },
+                {
+                    id: "3-2",
+                    year: "1922",
+                    title: "Liên bang Xô Viết ra đời",
+                    position: "below",
+                    offsetY: 20,
+                    image: null
+                },
+                {
+                    id: "3-3",
+                    year: "1924",
+                    title: "Lenin qua đời",
+                    position: "above",
+                    offsetY: 20,
+                    image: null
+                },
+                {
+                    id: "3-4",
+                    year: "1930",
+                    title: "Thành lập Đảng Cộng sản Việt Nam",
+                    position: "below",
+                    offsetY: 20,
+                    image: null
+                },
+                {
+                    id: "3-5",
+                    year: "1939 – 1945",
+                    title: "Vai trò của các nước XHCN trong Thế chiến II",
+                    position: "above",
+                    offsetY: 20,
+                    image: null
+                },
+                {
+                    id: "3-6",
+                    year: "1945",
+                    title: "Cách mạng Tháng Tám thành công (Việt Nam)",
+                    position: "below",
+                    offsetY: 20,
+                    image: null
+                },
+                {
+                    id: "3-7",
+                    year: "1948",
+                    title: "Cộng hòa Dân chủ Nhân dân Triều Tiên",
+                    position: "above",
+                    offsetY: 20,
+                    image: null
+                },
+                {
+                    id: "3-8",
+                    year: "1949",
+                    title: "Cộng hòa Nhân dân Trung Hoa",
+                    position: "below",
+                    offsetY: 20,
+                    image: null
+                }
+            ]
         },
         {
             id: 4,
-            label: "Kiến thức",
-            desc: "Tích lũy kiến thức và kỹ năng",
-            x: 40, y: -80,
-            parent: 2,
-            children: [],
+            title: "1947 – 1970s",
+            desc: "Mở rộng hệ thống XHCN trong bối cảnh Chiến tranh Lạnh",
             color: 0x95E1D3,
-            content: {
-                description: "Kiến thức là tài sản quý giá nhất. Giai đoạn này tập trung vào việc học hỏi liên tục, nâng cao chuyên môn và mở rộng hiểu biết.",
-                video: "https://www.youtube.com/embed/9bZkp7q19f0",
-                events: [
-                    { date: "08/2024", title: "Khóa học mới", desc: "Hoàn thành khóa học nâng cao" },
-                    { date: "09/2024", title: "Chứng chỉ", desc: "Đạt được chứng chỉ chuyên môn" }
-                ],
-                subNodes: [
-                    { id: "4a", label: "Self-learning", desc: "Tự học qua sách và online" },
-                    { id: "4b", label: "Mentorship", desc: "Học hỏi từ người có kinh nghiệm" }
-                ]
-            }
+            timelineNodes: [
+                {
+                    id: "4-1",
+                    year: "",
+                    title: "Bối cảnh bấy giờ",
+                    position: "above",
+                    offsetY: 12,
+                    image: null
+                },
+                {
+                    id: "4-2",
+                    year: "1947",
+                    title: "Học thuyết Truman: Khởi đầu chính thức Chiến tranh Lạnh",
+                    position: "below",
+                    offsetY: 12,
+                    image: null
+                },
+                {
+                    id: "4-3",
+                    year: "1949–1961",
+                    title: "Hình thành thế cân bằng siêu cường Mỹ – Liên Xô",
+                    position: "above",
+                    offsetY: 12,
+                    image: null
+                },
+                {
+                    id: "4-4",
+                    year: "1959",
+                    title: "Cách mạng Cuba thắng lợi",
+                    position: "below",
+                    offsetY: 12,
+                    image: null
+                },
+                {
+                    id: "4-5",
+                    year: "1975 – 1976",
+                    title: "Việt Nam kháng chiến thắng lợi - nước CHXHCN Việt Nam ra đời",
+                    position: "above",
+                    offsetY: 12,
+                    image: null
+                },
+                {
+                    id: "4-6",
+                    year: "1975",
+                    title: "Nước Cộng hòa Dân chủ Nhân dân Lào ra đời",
+                    position: "below",
+                    offsetY: 12,
+                    image: null
+                }
+            ]
         },
         {
             id: 5,
-            label: "Kinh nghiệm",
-            desc: "Rút ra bài học từ thử thách",
-            x: 40, y: 80,
-            parent: 3,
-            children: [],
+            title: "1980s – 2000s",
+            desc: "Khủng hoảng và tan rã của hệ thống XHCN Đông Âu – Liên Xô. Tái định hình con đường phát triển của các nước XHCN còn lại",
             color: 0xF38181,
-            content: {
-                description: "Kinh nghiệm đến từ việc thực hành và học hỏi từ những sai lầm. Mỗi thử thách vượt qua đều để lại những bài học quý giá.",
-                events: [
-                    { date: "10/2024", title: "Bài học quan trọng", desc: "Nhận ra tầm quan trọng của việc lập kế hoạch" },
-                    { date: "11/2024", title: "Chia sẻ kinh nghiệm", desc: "Viết blog chia sẻ với cộng đồng" }
-                ],
-                subNodes: [
-                    { id: "5a", label: "Reflection", desc: "Suy ngẫm về những gì đã làm" },
-                    { id: "5b", label: "Documentation", desc: "Ghi chép lại bài học" }
-                ]
-            }
+            timelineNodes: [
+                {
+                    id: "5-1",
+                    year: "",
+                    title: "Bối cảnh bấy giờ",
+                    position: "above",
+                    offsetY: 12,
+                    image: null
+                },
+                {
+                    id: "5-2",
+                    year: "1978",
+                    title: "Trung Quốc khởi động cải cách và mở cửa",
+                    position: "below",
+                    offsetY: 12,
+                    image: null
+                },
+                {
+                    id: "5-3",
+                    year: "1986",
+                    title: "Việt Nam phát động công cuộc Đổi mới",
+                    position: "above",
+                    offsetY: 12,
+                    image: null
+                },
+                {
+                    id: "5-4",
+                    year: "1989",
+                    title: "Sụp đổ dây chuyền Đông Âu",
+                    position: "below",
+                    offsetY: 12,
+                    image: null
+                },
+                {
+                    id: "5-5",
+                    year: "1991",
+                    title: "Liên Xô tan rã",
+                    position: "above",
+                    offsetY: 12,
+                    image: null
+                },
+                {
+                    id: "5-6",
+                    year: "Đầu thập niên 1990",
+                    title: "Tái cấu trúc các nước XHCN còn lại",
+                    position: "below",
+                    offsetY: 12,
+                    image: null
+                }
+            ]
         },
         {
             id: 6,
-            label: "Đích đến",
-            desc: "Mục tiêu cuối cùng đạt được",
-            x: 100, y: -60,
-            children: [],
+            title: "2000s – nay",
+            desc: "Tác động đương đại của chủ nghĩa Marx–Lenin trong bối cảnh toàn cầu",
             color: 0xAA96DA,
-            content: {
-                description: "Đích đến không phải là kết thúc, mà là một khởi đầu mới. Đây là lúc nhìn lại hành trình, ăn mừng thành công và đặt ra những mục tiêu mới cao hơn.",
-                video: "https://www.youtube.com/embed/ZbZSe6N_BXs",
-                events: [
-                    { date: "12/2024", title: "Launch!", desc: "Ra mắt sản phẩm chính thức" },
-                    { date: "01/2025", title: "Celebration", desc: "Ăn mừng thành công cùng đội ngũ" }
-                ],
-                subNodes: [
-                    { id: "6a", label: "Celebration", desc: "Ăn mừng và ghi nhận thành tích" },
-                    { id: "6b", label: "New Goals", desc: "Đặt ra mục tiêu mới" },
-                    { id: "6c", label: "Scale Up", desc: "Mở rộng quy mô" }
-                ]
-            }
-        },
+            timelineNodes: [
+                {
+                    id: "6-1",
+                    year: "",
+                    title: "Ảnh hưởng về kinh tế: Sự dịch chuyển trọng tâm tăng trưởng toàn cầu",
+                    position: "above",
+                    offsetY: 12,
+                    image: null
+                },
+                {
+                    id: "6-2",
+                    year: "",
+                    title: "Ảnh hưởng về chính trị – ngoại giao: Xu hướng hình thành thế giới đa cực",
+                    position: "below",
+                    offsetY: 12,
+                    image: null
+                },
+                {
+                    id: "6-3",
+                    year: "",
+                    title: "Ảnh hưởng về mô hình xã hội: Nhấn mạnh con người là trung tâm phát triển",
+                    position: "above",
+                    offsetY: 12,
+                    image: null
+                },
+                {
+                    id: "6-4",
+                    year: "",
+                    title: "Ảnh hưởng về Lý luận: Gợi mở con đường phát triển mới",
+                    position: "below",
+                    offsetY: 12,
+                    image: null
+                }
+            ]
+        }
     ],
-    // Các kết nối ở đây
+
+    // ==========================================
+    // Legacy nodes (for backward compatibility)
+    // Đây là các node hiển thị trên timeline 3D tổng quan
+    // ==========================================
+    nodes: [
+        { id: 1, label: "Ra đời", year: "1840s-1890s", desc: "Sự ra đời của chủ nghĩa Marx", x: -200, position: "above", offsetY: 40, image: null, color: 0xFF6B6B },
+        { id: 2, label: "Thực tiễn", year: "1900s-1920s", desc: "Từ lý luận đến thực tiễn", x: -120, position: "below", offsetY: 45, image: null, color: 0x4ECDC4 },
+        { id: 3, label: "Củng cố", year: "1920s-1945", desc: "Củng cố mô hình XHCN", x: -40, position: "above", offsetY: 50, image: null, color: 0xFFE66D },
+        { id: 4, label: "Mở rộng", year: "1947-1970s", desc: "Mở rộng hệ thống XHCN", x: 40, position: "below", offsetY: 55, image: null, color: 0x95E1D3 },
+        { id: 5, label: "Tái định hình", year: "1980s-2000s", desc: "Khủng hoảng và đổi mới", x: 120, position: "above", offsetY: 45, image: null, color: 0xF38181 },
+        { id: 6, label: "Đương đại", year: "2000s-nay", desc: "Tác động đương đại", x: 200, position: "below", offsetY: 50, image: null, color: 0xAA96DA }
+    ],
+
+    // Các đường nối giữa các mốc thời gian chính để thể hiện tiến trình lịch sử liên tục
     connections: [
         { from: 1, to: 2 },
-        { from: 1, to: 3 },
-        { from: 2, to: 4 },
-        { from: 3, to: 5 },
-        { from: 2, to: 6 },
-        { from: 3, to: 6 },
+        { from: 2, to: 3 },
+        { from: 3, to: 4 },
+        { from: 4, to: 5 },
+        { from: 5, to: 6 }
     ]
 };
