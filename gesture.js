@@ -246,7 +246,9 @@ function handleLeftCarousel(landmarks) {
 
     // Giảm threshold xuống 0.08 để nhạy hơn (từ CONFIG.SWIPE_THRESHOLD)
     if (Math.abs(dx) > 0.08) {
-        const direction = dx > 0 ? -1 : 1;
+        // dx > 0: tay di chuyển sang phải (mirrored = tay thật sang trái) → next card (1)
+        // dx < 0: tay di chuyển sang trái (mirrored = tay thật sang phải) → prev card (-1)
+        const direction = dx > 0 ? 1 : -1;
         navigateCards(direction);
         lastSwipeTime = now;
 
