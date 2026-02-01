@@ -1527,6 +1527,26 @@ function initCarouselControls() {
 let lastWheelTime = 0;
 
 
+// Lazy load gesture.js only when needed
+let gestureScriptLoaded = false;
+function loadGestureScript() {
+    return new Promise((resolve, reject) => {
+        if (gestureScriptLoaded) {
+            resolve();
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = 'gesture.js';
+        script.onload = () => {
+            gestureScriptLoaded = true;
+            console.log('✅ gesture.js lazy loaded');
+            resolve();
+        };
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+}
+
 function startGestureMode() {
     controlMode = 'gesture';
     currentGestureContext = GESTURE_CONTEXT.CAROUSEL;
@@ -1534,12 +1554,10 @@ function startGestureMode() {
     document.getElementById('gesture-panel').style.display = 'flex';
     document.getElementById('node-cards-container').style.display = 'flex';
     document.getElementById('canvas-container').style.display = 'none';
-    document.getElementById('header').style.display = 'none'; // Gesture mode uses vertical panel
+    document.getElementById('header').style.display = 'none';
 
-    // Hiện nút back ngay từ Carousel
     document.getElementById('global-back-btn').style.display = 'block';
 
-    // Enable cursor by default in gesture mode
     cursorEnabled = true;
     const cursor = document.getElementById('virtual-cursor');
     if (cursor) cursor.style.display = 'block';
@@ -1547,9 +1565,14 @@ function startGestureMode() {
     initCarouselControls();
     updateCarouselScale();
     startSystem();
-    startMediaPipe();
 
-    // Auto-play Music via Toggle Function
+    // Lazy load gesture.js then start MediaPipe
+    loadGestureScript().then(() => {
+        startMediaPipe();
+    }).catch(err => {
+        console.error('Failed to load gesture.js:', err);
+    });
+
     toggleAudio(true);
 }
 
