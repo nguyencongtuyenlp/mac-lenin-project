@@ -245,7 +245,7 @@ function handleLeftCarousel(landmarks) {
     }
 
     // Threshold 0.08 để nhạy
-    if (Math.abs(dx) > 0.08) {
+    if (Math.abs(dx) > 0.05) {
         // dx > 0: vuốt sang phải → next card (1)
         // dx < 0: vuốt sang trái → prev card (-1)
         const direction = dx > 0 ? 1 : -1;
