@@ -279,6 +279,23 @@
         ← Quay lại
     </button>
 
+    <!-- Conclusion Button (Bottom-Left) -->
+    <button id="conclusion-btn" onclick="openConclusionOverlay()" style="display: none;">
+        Kết luận
+    </button>
+
+    <!-- Conclusion Overlay -->
+    <div id="conclusion-overlay">
+        <div id="conclusion-container">
+            <h1 id="conclusion-title">Kết luận</h1>
+            <div id="conclusion-content">
+                <!-- Nội dung kết luận sẽ được import từ data.js -->
+                <p>Nội dung kết luận cho giai đoạn này sẽ được thêm sau...</p>
+            </div>
+            <button id="conclusion-close-btn" onclick="closeConclusionOverlay()">✕ Đóng</button>
+        </div>
+    </div>
+
     <!-- Copyright -->
     <div id="copyright">© Marx-lenin by Group 8 + 5</div>
 

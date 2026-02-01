@@ -1180,3 +1180,109 @@
         .zoom-indicator.visible {
             opacity: 1;
         }
+
+        /* ==========================================
+           CONCLUSION BUTTON & OVERLAY
+        ========================================== */
+
+        /* Conclusion Button - Semi-transparent, Bottom-Left */
+        #conclusion-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            z-index: 500;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #FFD700;
+            background: rgba(139, 0, 0, 0.5);
+            border: 2px solid rgba(255, 215, 0, 0.4);
+            border-radius: 25px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            opacity: 0.6;
+        }
+
+        #conclusion-btn:hover {
+            opacity: 1;
+            background: rgba(139, 0, 0, 0.8);
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        /* Conclusion Overlay */
+        #conclusion-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        #conclusion-overlay.show {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        #conclusion-container {
+            max-width: 800px;
+            max-height: 80vh;
+            padding: 40px;
+            background: rgba(68, 17, 17, 0.9);
+            border: 2px solid rgba(255, 215, 0, 0.5);
+            border-radius: 20px;
+            overflow-y: auto;
+            box-shadow: 0 0 60px rgba(255, 215, 0, 0.2);
+        }
+
+        #conclusion-title {
+            font-size: 28px;
+            color: #FFD700;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 0 0 20px rgba(255, 204, 0, 0.5);
+        }
+
+        #conclusion-content {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #ddd;
+        }
+
+        #conclusion-content p {
+            margin-bottom: 15px;
+        }
+
+        #conclusion-close-btn {
+            display: block;
+            margin: 30px auto 0;
+            padding: 10px 30px;
+            font-size: 14px;
+            color: #fff;
+            background: rgba(255, 215, 0, 0.3);
+            border: 1px solid #FFD700;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #conclusion-close-btn:hover {
+            background: rgba(255, 215, 0, 0.6);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
