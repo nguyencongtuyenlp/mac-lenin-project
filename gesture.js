@@ -225,42 +225,42 @@ function handleLeftTimeline(landmarks) {
 }
 
 function handleLeftCarousel(landmarks) {
+    if (!isOpenHand(landmarks)) {
+        prevPanPos = null;
+        return;
+    }
+    const palm = landmarks[9];
+    if (!prevPanPos) {
+        prevPanPos = palm;
+        return;
+    }
+
+    const dx = palm.x - prevPanPos.x;
     const now = Date.now();
 
-    // Cooldown 600ms giữa các lần chuyển thẻ
-    if (now - lastSwipeTime < 600) {
+    // Cooldown 500ms để vuốt liên tục
+    if (now - lastSwipeTime < 500) {
+        prevPanPos = palm;
         return;
     }
 
-    // Kiểm tra cử chỉ nắm đấm (fist)
-    const fingers = countExtendedFingers(landmarks);
-    const thumbTip = landmarks[4];
-    const indexBase = landmarks[5];
-    const thumbExtended = Math.hypot(thumbTip.x - indexBase.x, thumbTip.y - indexBase.y) > 0.08;
-
-    const isFist = !fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky && !thumbExtended;
-    const isOpenPalm = isOpenHand(landmarks);
-
-    // ✊ NẮM ĐẤM → Chuyển thẻ sang TRÁI (previous)
-    if (isFist) {
-        navigateCards(-1);
+    // Threshold 0.08 để nhạy
+    if (Math.abs(dx) > 0.08) {
+        // dx > 0: vuốt sang phải → next card (1)
+        // dx < 0: vuốt sang trái → prev card (-1)
+        const direction = dx > 0 ? 1 : -1;
+        navigateCards(direction);
         lastSwipeTime = now;
 
+        // Reset để cho phép vuốt tiếp
+        prevPanPos = null;
+
+        // Visual feedback
         const container = document.getElementById('node-cards-container');
         container.classList.add('swipe-shake');
         setTimeout(() => container.classList.remove('swipe-shake'), 300);
-        return;
-    }
-
-    // ✋ XÒE TAY → Chuyển thẻ sang PHẢI (next)
-    if (isOpenPalm) {
-        navigateCards(1);
-        lastSwipeTime = now;
-
-        const container = document.getElementById('node-cards-container');
-        container.classList.add('swipe-shake');
-        setTimeout(() => container.classList.remove('swipe-shake'), 300);
-        return;
+    } else {
+        prevPanPos = palm;
     }
 }
 
