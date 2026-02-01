@@ -121,9 +121,14 @@ function handleRightHand(landmarks) {
         pinky: pinky.y < landmarks[18].y
     };
 
-    const thumbExtended = Math.hypot(thumb.x - landmarks[5].x, thumb.y - landmarks[5].y) > 0.1;
+    // Thumb extended detection - more lenient threshold
+    const thumbExtended = Math.hypot(thumb.x - landmarks[5].x, thumb.y - landmarks[5].y) > 0.08;
+
+    // Fist: all 4 fingers closed
     const isFistGesture = !fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky;
-    const isThumbUp = thumbExtended && !fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky;
+
+    // 👍 Like/Thumb Up: thumb extended + index closed only (very lenient)
+    const isThumbUp = thumbExtended && !fingers.index;
 
     // 🖖 3 NGÓN → Back theo context
     if (fingers.index && fingers.middle && fingers.ring && !fingers.pinky) {
@@ -156,8 +161,20 @@ function handleRightHand(landmarks) {
         return '👍 NGÓN CÁI: ZOOM IN';
     }
 
-    // ✌️ 2 NGÓN → Chọn/Vào node
+    // ✌️ 2 NGÓN → Chọn thẻ (Carousel) / Vào node (Timeline)
     if (fingers.index && fingers.middle && !fingers.ring && !fingers.pinky) {
+        // Trong Carousel: chọn thẻ hiện tại
+        if (currentGestureContext === GESTURE_CONTEXT.CAROUSEL) {
+            const now = Date.now();
+            if (now - lastBackTime < 800) return '✌️ ĐANG CHỜ...'; // Cooldown
+            lastBackTime = now;
+
+            // Chọn thẻ đang active (currentCardIndex + 1 vì cardId bắt đầu từ 1)
+            const cardId = currentCardIndex + 1;
+            selectCard(cardId);
+            return `✌️ 2 NGÓN: CHỌN THẺ ${cardId}`;
+        }
+        // Trong Timeline: chọn node
         return selectOrEnterNode();
     }
 
@@ -298,8 +315,26 @@ function checkNodeHover(screenX, screenY) {
 // ==========================================
 // MEDIAPIPE INITIALIZATION
 // ==========================================
-function startMediaPipe() {
+async function startMediaPipe() {
     if (isMediaPipeRunning) return;
+
+    // === BẮT BUỘC XIN QUYỀN CAMERA ===
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                width: 640,
+                height: 480,
+                facingMode: 'user'
+            }
+        });
+        // Đóng stream tạm để MediaPipe tự quản lý
+        stream.getTracks().forEach(track => track.stop());
+        console.log('✅ Camera permission granted');
+    } catch (err) {
+        console.error('❌ Camera permission denied:', err);
+        alert('⚠️ Cần cấp quyền Camera để sử dụng chế độ cử chỉ tay!\n\nVui lòng:\n1. Nhấn vào biểu tượng camera trên thanh địa chỉ\n2. Chọn "Cho phép" (Allow)\n3. Tải lại trang');
+        return;
+    }
 
     const video = document.querySelector('.input_video');
     const canvas = document.getElementById('camera-preview');
