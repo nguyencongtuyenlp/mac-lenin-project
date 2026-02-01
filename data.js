@@ -132,8 +132,7 @@ const timelineData = {
                     position: "above",
                     offsetY: 20,
                     image: null,
-                    orbitMin: 8.0,   // Bay gần nhất = 3 lần bán kính node (Bay xa)
-                    orbitMax: 50.0    // Bay xa nhất = 6 lần bán kính node (Bay rất xa)
+                    
                 },
                 {
                     id: "2-2",
