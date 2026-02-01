@@ -6,7 +6,7 @@ const CONFIG = {
     nodeParticleCount: 25,  // Giảm từ 50 → 25 (giảm thêm 50% tính toán)
     timelineLength: 300,
     branchSpacing: 40,
-    nodeRadius: 8,
+    nodeRadius: 50,
     zoomMin: 0.3,
     zoomMax: 3.0,
 
@@ -70,7 +70,7 @@ const timelineData = {
     cards: [
         {
             id: 1,
-            title: "Trước 1840s – 1890s",
+            title: "Trước 1840s – 1890s: Sự ra đời và hoàn thiện của chủ nghĩa Marx",
             desc: "Sự ra đời và hoàn thiện của chủ nghĩa Marx",
             color: 0xFF6B6B,
             // === TÙY CHỈNH ĐỘ CONG SÓNG CHO TIMELINE NÀY ===
@@ -83,39 +83,45 @@ const timelineData = {
                     title: "Bối cảnh bấy giờ",
                     position: "above",
                     // === TÙY CHỈNH RIÊNG CHO NODE NÀY ===
-                    offsetY: 20,           // Khoảng cách từ line (pixel)
-                    nodeRadius: 10,      // null = dùng mặc định, hoặc số (vd: 10)
+                    offsetY: 40,           // Khoảng cách từ line (pixel)
+                    nodeRadius: 25,      // null = dùng mặc định, hoặc số (vd: 10)
                     labelScale: { x: 80, y: 18 },      // null = mặc định, hoặc {x: 60, y: 13}
                     nodeColor: null,       // null = dùng màu card, hoặc hex (vd: 0xFF0000)
-                    image: null
+                    image: "image/lenin.jpg",
+
+                    // === TÙY CHỈNH QUỸ ĐẠO HẠT (Bán kính bay) ===
+                    orbitMin: 10,   // Bay gần nhất = 3 lần bán kính node (Bay xa)
+                    orbitMax: 30    // Bay xa nhất = 6 lần bán kính node (Bay rất xa)
                 },
                 {
                     id: "1-2",
                     year: "1840s – 1850s",
                     title: "Sự ra đời của chủ nghĩa Marx",
                     position: "below",
-                    offsetY: 20,
-                    nodeRadius: null,
+                    offsetY: 40,
+                    nodeRadius: 25,
                     labelScale: null,
                     nodeColor: null,
-                    image: null
+                    image: "image/lenin.jpg",
+
+                    // Node này dùng mặc định (bay gần)
                 },
                 {
                     id: "1-3",
                     year: "1860s – 1890s",
                     title: "Hoàn thiện học thuyết Marx",
                     position: "above",
-                    offsetY: 20,
-                    nodeRadius: null,
+                    offsetY: 40,
+                    nodeRadius: 25,
                     labelScale: null,
                     nodeColor: null,
-                    image: null
+                    image: "image/lenin.jpg"
                 }
             ]
         },
         {
             id: 2,
-            title: "1900s – 1920s",
+            title: "1900s – 1920s: Từ lý luận Marx đến thực tiễn Lenin",
             desc: "Từ lý luận Marx đến thực tiễn Lenin",
             color: 0x4ECDC4,
             timelineNodes: [
@@ -125,7 +131,9 @@ const timelineData = {
                     title: "Bối cảnh bấy giờ",
                     position: "above",
                     offsetY: 20,
-                    image: null
+                    image: null,
+                    orbitMin: 8.0,   // Bay gần nhất = 3 lần bán kính node (Bay xa)
+                    orbitMax: 50.0    // Bay xa nhất = 6 lần bán kính node (Bay rất xa)
                 },
                 {
                     id: "2-2",
@@ -171,7 +179,7 @@ const timelineData = {
         },
         {
             id: 3,
-            title: "1920s – 1945",
+            title: "1920s – 1945: Củng cố mô hình XHCN \n và ảnh hưởng trong phong trào cách mạng thế giới",
             desc: "Củng cố mô hình XHCN và ảnh hưởng trong phong trào cách mạng thế giới",
             color: 0xFFE66D,
             timelineNodes: [
@@ -243,7 +251,7 @@ const timelineData = {
         },
         {
             id: 4,
-            title: "1947 – 1970s",
+            title: "1947 – 1970s: Mở rộng hệ thống XHCN trong bối cảnh Chiến tranh Lạnh",
             desc: "Mở rộng hệ thống XHCN trong bối cảnh Chiến tranh Lạnh",
             color: 0x95E1D3,
             timelineNodes: [
@@ -299,7 +307,7 @@ const timelineData = {
         },
         {
             id: 5,
-            title: "1980s – 2000s",
+            title: "1980s – 2000s: Khủng hoảng và tan rã của hệ thống XHCN Đông Âu – Liên Xô.\nTái định hình con đường phát triển của các nước XHCN còn lại",
             desc: "Khủng hoảng và tan rã của hệ thống XHCN Đông Âu – Liên Xô. Tái định hình con đường phát triển của các nước XHCN còn lại",
             color: 0xF38181,
             timelineNodes: [
@@ -355,7 +363,7 @@ const timelineData = {
         },
         {
             id: 6,
-            title: "2000s – nay",
+            title: "2000s – nay: Tác động đương đại của chủ nghĩa Marx–Lenin trong bối cảnh toàn cầu",
             desc: "Tác động đương đại của chủ nghĩa Marx–Lenin trong bối cảnh toàn cầu",
             color: 0xAA96DA,
             timelineNodes: [

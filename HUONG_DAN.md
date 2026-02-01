@@ -1,326 +1,139 @@
-# 📖 HƯỚNG DẪN TINH CHỈNH TIMELINE
+# 📖 HƯỚNG DẪN CHỈNH SỬA NODE CHUYÊN SÂU
 
-> **File chính**: `script.js`  
-> **Hàm chính**: `createCardTimeline()` (dòng ~620)
-
----
-
-## 1. KHOẢNG CÁCH NODE/LABEL VỚI ĐƯỜNG LINE CHÍNH
-
-### 📍 Dòng ~717-722 trong `createCardTimeline()`
-
-```javascript
-// Khoảng cách node từ line chính
-const offset = nodeCount > 6 ? 35 : (nodeCount > 4 ? 40 : 45);
-
-// Vị trí Y của node (trên hoặc dưới line)
-const nodeY = (nodeData.position === "above") 
-    ? baseY + offset   // Trên đường
-    : baseY - offset;  // Dưới đường
-```
-
-### ⚙️ Tùy chỉnh:
-
-| Giá trị offset | Kết quả |
-|----------------|---------|
-| `30` | Gần line hơn |
-| `45` | Mặc định |
-| `60` | Xa line hơn |
-
-**Ví dụ - Node gần line hơn:**
-```javascript
-const offset = 25; // Thay vì 35-45
-```
+Tài liệu này hướng dẫn cách sửa **mọi thuộc tính** của node trong file `data.js`.
 
 ---
 
-## 2. KÍCH CỠ LABEL, FONT CHỮ, KHUNG
+## 1. CẤU TRÚC ĐẦY ĐỦ CỦA MỘT NODE
 
-### 📍 Dòng ~778-818 trong `createCardTimeline()`
-
-### A. Kích thước Canvas (Khung label)
+Mỗi node trong `timelineNodes` có cấu trúc đầy đủ như sau (bạn có thể copy mẫu này):
 
 ```javascript
-// Dòng ~778
-const labelCanvas = document.createElement('canvas');
-labelCanvas.width = 512;   // Chiều rộng khung
-labelCanvas.height = 100;  // Chiều cao khung
-```
+{
+    // === 1. THÔNG TIN CƠ BẢN (Hiển thị trên Timeline) ===
+    id: "1-1",                  // Mã duy nhất (bắt buộc)
+    year: "Trước 1840s",        // Dòng 1: Năm/Mốc thời gian
+    title: "Bối cảnh bấy giờ",  // Dòng 2: Tiêu đề ngắn
+    position: "above",          // Vị trí: "above" (trên sóng) hoặc "below" (dưới sóng)
+    offsetY: 20,                // Khoảng cách từ đường sóng (pixel)
 
-**Tùy chỉnh:**
-- `512` → `600`: Khung rộng hơn
-- `100` → `120`: Khung cao hơn
+    // === 2. TÙY CHỈNH GIAO DIỆN (Tùy chọn - nếu bỏ qua sẽ dùng mặc định) ===
+    nodeRadius: 10,             // Kích thước chấm tròn (mặc định: 6-8)
+    nodeColor: 0xFFD700,        // Màu chấm tròn (mặc định: màu của Card cha)
+    labelScale: { x: 80, y: 18 }, // Kích cỡ khung chữ (x: rộng, y: cao)
+    image: null,                // (Chưa dùng)
 
-### B. Font chữ
+    // === 3. NỘI DUNG CHI TIẾT (Hiển thị khi bấm vào node) ===
+    // Dữ liệu này hiển thị trong bảng Overlay
+    description: "Đoạn văn mô tả chi tiết / Trích dẫn quan trọng.",
+    
+    // Danh sách các sự kiện con (bên trái overlay)
+    events: [
+        { 
+            date: "1840", 
+            title: "Sự kiện A", 
+            desc: "Mô tả chi tiết sự kiện A..." 
+        },
+        { 
+            date: "1842", 
+            title: "Sự kiện B", 
+            desc: "Mô tả chi tiết sự kiện B..." 
+        }
+    ],
 
-```javascript
-// Dòng ~791-793: Kích cỡ font
-const yearFontSize = nodeCount > 6 ? 18 : (nodeCount > 4 ? 20 : 22);
-const titleFontSize = nodeCount > 6 ? 14 : (nodeCount > 4 ? 16 : 18);
-```
-
-**Bảng font:**
-
-| nodeCount | yearFontSize | titleFontSize |
-|-----------|--------------|---------------|
-| ≤4 | 22px | 18px |
-| 5-6 | 20px | 16px |
-| 7+ | 18px | 14px |
-
-**Ví dụ font lớn hơn:**
-```javascript
-const yearFontSize = 26;
-const titleFontSize = 20;
-```
-
-### C. Tỉ lệ hiển thị Label (Scale)
-
-```javascript
-// Dòng ~806-816
-let labelScale;
-if (nodeCount <= 3) {
-    labelScale = { x: 70, y: 15 };   // Lớn nhất
-} else if (nodeCount <= 5) {
-    labelScale = { x: 60, y: 13 };
-} else if (nodeCount <= 7) {
-    labelScale = { x: 50, y: 11 };
-} else {
-    labelScale = { x: 45, y: 10 };   // Nhỏ nhất
+    // Danh sách các mục con (bên phải overlay - Sub-nodes)
+    subNodes: [
+        { 
+            label: "Chi tiết 1", 
+            desc: "Nội dung chi tiết 1..." 
+        },
+        { 
+            label: "Chi tiết 2", 
+            desc: "Nội dung chi tiết 2..." 
+        }
+    ]
 }
 ```
 
-**Ví dụ label to hơn:**
-```javascript
-labelScale = { x: 80, y: 18 };
-```
+---
+
+## 2. GIẢI THÍCH CHI TIẾT TỪNG THUỘC TÍNH
+
+### A. Nhóm Hiển thị trên Line (Timeline)
+
+| Thuộc tính | Kiểu | Mô tả |
+|------------|------|-------|
+| `id` | String | **Bắt buộc**. Mã định danh (vd: "1-1", "1-2"). Không được trùng lặp. |
+| `year` | String | Dòng chữ đầu tiên trên nhãn node (thường là năm). |
+| `title` | String | Dòng chữ thứ hai trên nhãn node (tiêu đề ngắn). |
+| `position` | String | `"above"`: Node nằm trên đường lượn sóng.<br>`"below"`: Node nằm dưới đường lượn sóng. |
+| `offsetY` | Number | Khoảng cách từ tim đường sóng đến tâm node (pixel).<br>- `10`: Rất gần<br>- `20-30`: Trung bình<br>- `50+`: Xa |
+| `nodeRadius` | Number | Độ to của chấm tròn.<br>- `null`: Tự động (6-8)<br>- `10-12`: To nổi bật |
+| `nodeColor` | Hex | Màu của chấm tròn. Vd: `0xFF0000` (Đỏ).<br>- `null`: Lấy theo màu của Card (Thẻ lớn). |
+| `labelScale` | Object | Kích thước khung chứa chữ.<br>- `{x: 60, y: 13}`: Nhỏ (Mặc định)<br>- `{x: 100, y: 25}`: Rất to (Cho tiêu đề dài) |
+
+### B. Nhóm Nội dung Chi tiết (Overlay)
+
+Các thuộc tính này **ẩn** trên timeline, chỉ hiện ra khi **click vào node**.
+
+| Thuộc tính | Kiểu | Mô tả |
+|------------|------|-------|
+| `description` | String | Đoạn văn bản hiển thị dưới tiêu đề lớn trong Overlay. Thường là trích dẫn hoặc tóm tắt. |
+| `events` | Array | Danh sách các sự kiện (timeline dọc bên trái Overlay).<br>Mỗi item gồm: `{date, title, desc}` |
+| `subNodes` | Array | Danh sách các nút con (bên phải Overlay).<br>Mỗi item gồm: `{label, desc}` |
 
 ---
 
-## 3. KÍCH CỠ NODE (Hình tròn)
+## 3. VÍ DỤ THỰC TẾ
 
-### 📍 Dòng ~726-730 trong `createCardTimeline()`
-
-```javascript
-// Dòng ~726: Bán kính node tự động theo số lượng
-const nodeRadius = nodeCount > 6 ? 6 : (nodeCount > 4 ? 7 : 8);
-
-// Dòng ~727: Tạo sphere
-const geometry = new THREE.SphereGeometry(nodeRadius, 32, 32);
-```
-
-**Bảng bán kính:**
-
-| nodeCount | nodeRadius |
-|-----------|------------|
-| ≤4 | 8px |
-| 5-6 | 7px |
-| 7+ | 6px |
-
-**Ví dụ node to hơn:**
-```javascript
-const nodeRadius = 10; // Cố định 10px cho tất cả
-```
-
-### Glow Ring (Vòng sáng):
-
-```javascript
-// Dòng ~739-745
-new THREE.RingGeometry(
-    nodeRadius + 2,    // Bán kính trong
-    nodeRadius + 5,    // Bán kính ngoài
-    32                 // Độ mịn
-)
-```
-
-**Glow lớn hơn:**
-```javascript
-new THREE.RingGeometry(nodeRadius + 4, nodeRadius + 10, 32)
-```
-
----
-
-## 4. PARTICLES (Hạt bay xung quanh node)
-
-### 📍 Dòng ~827-867 - Hàm `createNodeParticles()`
-
-### A. Số lượng hạt
-
-```javascript
-// Dòng ~830
-const count = 15; // Số hạt mỗi node
-```
-
-**Tùy chỉnh:**
-- `10`: Ít hạt, nhẹ hơn
-- `25`: Nhiều hạt, lung linh hơn
-
-### B. Kích cỡ hạt
-
-```javascript
-// Dòng ~852
-const mat = new THREE.PointsMaterial({
-    size: 1.5,       // Kích cỡ mỗi hạt
-    opacity: 0.6,    // Độ trong suốt
-});
-```
-
-**Hạt lớn hơn:**
-```javascript
-size: 3.0,
-opacity: 0.8,
-```
-
-### C. Bán kính bay
-
-```javascript
-// Dòng ~835-836: Bán kính bay xung quanh node
-const radius = 15 + Math.random() * 20;  // 15-35px
-```
-
-**Hạt bay rộng hơn:**
-```javascript
-const radius = 20 + Math.random() * 40;  // 20-60px
-```
-
----
-
-## 5. BẢNG TỔNG HỢP
-
-| Thành phần | Dòng | Tham số | Mặc định |
-|------------|------|---------|----------|
-| Khoảng cách node-line | ~718 | `offset` | 35-45 |
-| Canvas label | ~778 | `width/height` | 512x100 |
-| Font năm | ~791 | `yearFontSize` | 18-22 |
-| Font title | ~793 | `titleFontSize` | 14-18 |
-| Label scale | ~808 | `labelScale` | 45-70 |
-| Node radius | ~726 | `nodeRadius` | 6-8 |
-| Glow ring | ~740 | `+2, +5` | - |
-| Số particles | ~830 | `count` | 15 |
-| Particle size | ~852 | `size` | 1.5 |
-
----
-
-## 6. TINH CHỈNH TỪNG NODE RIÊNG LẺ
-
-### 📍 Chỉnh trong file `data.js`
-
-Mỗi node có thể có **thuộc tính riêng**, KHÔNG phụ thuộc node khác:
-
+### Node đơn giản (chỉ có timeline)
 ```javascript
 {
     id: "1-1",
     year: "1840",
     title: "Sự kiện A",
-    position: "above",           // "above" hoặc "below"
-    
-    // === TÙY CHỈNH RIÊNG NODE NÀY ===
-    offsetY: 12,                 // Khoảng cách từ line (pixel)
-    nodeRadius: 10,              // Kích cỡ node (null = mặc định)
-    labelScale: {x: 80, y: 18},  // Kích cỡ label (null = mặc định)
-    nodeColor: 0xFF0000,         // Màu node (null = dùng màu card)
-    
-    image: null
+    position: "above",
+    offsetY: 20
 }
 ```
 
-### ⚙️ Bảng tham số:
-
-| Tham số | Giá trị mẫu | Ý nghĩa |
-|---------|-------------|---------|
-| `offsetY` | `12` | Khoảng cách từ line (px) |
-| `nodeRadius` | `10` hoặc `null` | Bán kính node |
-| `labelScale` | `{x:60, y:13}` hoặc `null` | Kích cỡ label |
-| `nodeColor` | `0xFF0000` hoặc `null` | Màu hex cho node |
-
-### 🎯 Ví dụ - Node 1 to, Node 2 nhỏ:
-
-```javascript
-timelineNodes: [
-    {
-        id: "1-1",
-        year: "1840",
-        title: "Sự kiện QUAN TRỌNG",
-        position: "above",
-        offsetY: 20,
-        nodeRadius: 12,              // ← Node TO
-        labelScale: {x: 90, y: 20},  // ← Label TO
-        nodeColor: 0xFF5500,         // ← Màu cam
-        image: null
-    },
-    {
-        id: "1-2",
-        year: "1850",
-        title: "Sự kiện phụ",
-        position: "below",
-        offsetY: 10,
-        nodeRadius: 5,               // ← Node NHỎ
-        labelScale: {x: 40, y: 10},  // ← Label NHỎ
-        nodeColor: null,             // ← Dùng màu card
-        image: null
-    }
-]
-```
-
-**Ctrl+F5** để xem thay đổi! 🎉
-
-### 📍 Chỉnh trong file `data.js`
-
-Mỗi node trong `timelineNodes` có 2 tham số điều khiển vị trí:
-
+### Node đầy đủ (full option)
 ```javascript
 {
-    id: "1-1",
-    year: "Trước 1840s",
-    title: "Bối cảnh bấy giờ",
-    position: "above",    // ← "above" = TRÊN đường line, "below" = DƯỚI đường line
-    offsetY: 45,          // ← Khoảng cách từ đường line (pixel)
+    id: "1-2",
+    year: "1848",
+    title: "Tuyên ngôn Đảng CS",
+    position: "below",
+    offsetY: 40,
+    nodeRadius: 12,           // Node to nổi bật
+    nodeColor: 0xFF0000,      // Màu đỏ
+    
+    // Nội dung chi tiết
+    description: "Vô sản toàn thế giới, đoàn kết lại!",
+    
+    events: [
+        { date: "Tháng 2", title: "Xuất bản", desc: "Tại London..." }
+    ],
+    
+    subNodes: [
+        { label: "Ý nghĩa", desc: "Văn kiện cương lĩnh đầu tiên..." },
+        { label: "Tác giả", desc: "Marx và Engels" }
+    ]
 }
 ```
 
-### ⚙️ Ý nghĩa:
+---
 
-| Tham số | Giá trị | Kết quả |
-|---------|---------|---------|
-| `position` | `"above"` | Node nằm **phía trên** đường wave |
-| `position` | `"below"` | Node nằm **phía dưới** đường wave |
-| `offsetY` | `5` | Rất **gần** đường line |
-| `offsetY` | `45` | Khoảng cách **trung bình** |
-| `offsetY` | `80` | Rất **xa** đường line |
+## 4. MẸO CHỈNH SỬA
 
-### 🎯 Ví dụ thực tế:
+1.  **Chỉnh độ cong sóng (Wave Amplitude):**
+    - Sửa ở cấp **Card** (Thẻ lớn): `waveAmplitude: 30`
+    - Tăng lên `50-60` để sóng uốn lượn mạnh hơn.
+    - Giảm xuống `10-20` để sóng phẳng hơn.
 
-**Node 1 gần line, Node 2 xa line:**
-```javascript
-timelineNodes: [
-    {
-        id: "1-1",
-        year: "1840",
-        title: "Sự kiện A",
-        position: "above",
-        offsetY: 10,        // ← Gần line (10px)
-    },
-    {
-        id: "1-2", 
-        year: "1850",
-        title: "Sự kiện B",
-        position: "below",
-        offsetY: 70,        // ← Xa line (70px)
-    }
-]
-```
+2.  **Làm node so le đẹp mắt:**
+    - Hãy đặt `position` xen kẽ: `above` → `below` → `above`...
+    - Chỉnh `offsetY` khác nhau một chút (vd: 20, 35, 20, 35...) để tạo nhịp điệu tự nhiên.
 
-### 📊 Sơ đồ minh họa:
-
-```
-        [Node above, offsetY=60]
-                ↑
-                | 60px
-                ↓
-    ~~~~~~~ WAVE LINE ~~~~~~~
-                ↑
-                | 30px
-                ↓
-        [Node below, offsetY=30]
-```
-
-**Ctrl+F5** sau khi sửa `data.js` để xem thay đổi!
+3.  **Thay màu từng phần:**
+    - Bạn có thể làm nổi bật một node quan trọng bằng cách gán `nodeColor` riêng (vd màu vàng `0xFFFF00`) trong khi các node khác để `null` (theo màu chủ đạo).

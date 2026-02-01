@@ -743,6 +743,9 @@ function createCardTimeline(cardId) {
             ? nodeData.nodeRadius
             : defaultRadius;
 
+        // Lưu bán kính thực tế để dùng cho particles
+        nodeData.computedRadius = nodeRadius;
+
         // DEBUG: Log để kiểm tra giá trị
         console.log(`🔵 Node ${nodeData.id}: nodeRadius=${nodeRadius} (data=${nodeData.nodeRadius}), labelScale=${JSON.stringify(nodeData.labelScale)}`);
 
@@ -751,14 +754,58 @@ function createCardTimeline(cardId) {
             ? nodeData.nodeColor
             : (card.color || 0xFFD700);
 
+        // ⭐ Lấy opacity tùy chỉnh (nếu có)
+        const nodeOpacity = nodeData.opacity !== undefined ? nodeData.opacity : 1.0;
+
         // 🔵 Node dạng 2D Circle (luôn hiện hình tròn)
         const geometry = new THREE.CircleGeometry(nodeRadius, 32);
-        const nodeMaterial = new THREE.MeshBasicMaterial({
-            color: nodeColor,
-            transparent: true,
-            opacity: 0.9,
-            side: THREE.DoubleSide  // Nhìn từ cả 2 phía
-        });
+
+        let nodeMaterial;
+
+        // Nếu có ảnh -> dùng Texture
+        if (nodeData.image) {
+            console.log(`🖼️ Đang load ảnh cho node ${nodeData.id}: ${nodeData.image}`);
+            const textureLoader = new THREE.TextureLoader();
+
+            // Load texture với callback để xử lý lỗi
+            const texture = textureLoader.load(
+                nodeData.image,
+                // OnLoad
+                (tex) => {
+                    console.log(`✅ Đã load ảnh: ${nodeData.image}`);
+                    // Đảm bảo cập nhật lại material sau khi ảnh load xong
+                    tex.colorSpace = THREE.SRGBColorSpace; // Sửa màu cho đúng
+                },
+                // OnProgress (không cần thiết lắm)
+                undefined,
+                // OnError
+                (err) => {
+                    console.error(`❌ Lỗi load ảnh ${nodeData.image}:`, err);
+                    // Fallback về màu nếu lỗi
+                    if (mesh && mesh.material) {
+                        mesh.material.map = null;
+                        mesh.material.color.setHex(nodeData.nodeColor || nodeColor);
+                        mesh.material.needsUpdate = true;
+                    }
+                }
+            );
+
+            nodeMaterial = new THREE.MeshBasicMaterial({
+                map: texture,
+                color: 0xffffff, // Khi có map, color phải là trắng để không bị ám màu
+                transparent: nodeOpacity < 1.0, // Chỉ bật transparent khi cần
+                opacity: nodeOpacity,
+                side: THREE.DoubleSide
+            });
+        } else {
+            // Không ảnh -> dùng Màu (như cũ)
+            nodeMaterial = new THREE.MeshBasicMaterial({
+                color: nodeColor,
+                transparent: true,
+                opacity: 0.9,
+                side: THREE.DoubleSide
+            });
+        }
         const mesh = new THREE.Mesh(geometry, nodeMaterial);
         mesh.position.set(nodeData.x, nodeY, 5);  // z=5: Node ở TRƯỚC
         mesh.userData = nodeData;
@@ -870,8 +917,8 @@ function createCardTimeline(cardId) {
         labelSprite.position.set(nodeData.x, labelY, 0);
         timelineGroup.add(labelSprite);
 
-        // ⭐ TẠO PARTICLES CHO NODE (dùng màu riêng nếu có)
-        createNodeParticles(nodeData, nodeColor);
+        // ⭐ TẠO PARTICLES CHO NODE (ĐÃ TẮT)
+        // createNodeParticles(nodeData, nodeColor);
     });
 
     console.log(`✅ Card ${cardId} timeline created with ${nodeCount} nodes`);
@@ -886,7 +933,16 @@ function createNodeParticles(nodeData, nodeColor) {
 
     for (let i = 0; i < count; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const radius = 15 + Math.random() * 20;
+
+        // ⭐ Quỹ đạo hạt: Giá trị PIXEL trực tiếp (không nhân scale)
+        // orbitMin/Max là khoảng cách tính bằng pixel từ tâm node
+        const orbitMin = nodeData.orbitMin !== undefined ? nodeData.orbitMin : 10;  // Mặc định 50px
+        const orbitMax = nodeData.orbitMax !== undefined ? nodeData.orbitMax : 30; // Mặc định 150px
+
+        // Random trong khoảng từ orbitMin đến orbitMax (pixel)
+        const radius = orbitMin + Math.random() * (orbitMax - orbitMin);
+        if (i === 0) console.log(`Orbit: ${nodeData.id} | Min:${orbitMin}px | Max:${orbitMax}px | R:${radius.toFixed(0)}px`);
+
         const x = nodeData.x + Math.cos(angle) * radius;
         const y = nodeData.y + Math.sin(angle) * radius;
         const z = (Math.random() - 0.5) * 30;
@@ -1001,11 +1057,21 @@ function animate() {
 
         for (let i = 0; i < positions.length; i += 3) {
             const idx = i / 3;
-            const angle = time * 0.5 + phases[idx];
-            const radius = 15 + Math.sin(time * 2 + phases[idx]) * 5;
-            positions[i] = nodeData.x + Math.cos(angle + idx * 0.1) * radius;
-            positions[i + 1] = nodeData.y + Math.sin(angle + idx * 0.1) * radius * 0.5;
-            positions[i + 2] = Math.sin(time + phases[idx]) * 10;
+
+            // Lấy giá trị orbitMin/Max từ nodeData (pixel trực tiếp)
+            const orbitMin = nodeData.orbitMin !== undefined ? nodeData.orbitMin : 50;
+            const orbitMax = nodeData.orbitMax !== undefined ? nodeData.orbitMax : 150;
+
+            // Bán kính dao động giữa min và max tạo hiệu ứng lấp lánh
+            const baseRadius = orbitMin + (orbitMax - orbitMin) * (0.5 + 0.5 * Math.sin(time * 2 + phases[idx]));
+
+            // Góc quay theo thời gian (mỗi hạt có phase khác nhau)
+            const angle = time * 0.8 + phases[idx];
+
+            // Quỹ đạo TRÒN (X và Y cùng hệ số), cùng mặt phẳng với node (Z cố định)
+            positions[i] = nodeData.x + Math.cos(angle) * baseRadius;
+            positions[i + 1] = nodeData.y + Math.sin(angle) * baseRadius;
+            positions[i + 2] = 6; // Hơi trước node (Z=5) để hiện rõ
         }
         particles.geometry.attributes.position.needsUpdate = true;
 
@@ -1912,7 +1978,7 @@ function startMediaPipe() {
 function stopMediaPipe() {
     isMediaPipeRunning = false;
 
-    if (cameraInstance) {
+    if (typeof cameraInstance !== 'undefined' && cameraInstance) {
         cameraInstance.stop();
     }
 
