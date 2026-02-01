@@ -102,6 +102,11 @@ function processHands(results) {
         if (leftHand) handleLeftTimeline(leftHand);
         if (rightHand) handleRightHand(rightHand);
     }
+    else if (currentGestureContext === GESTURE_CONTEXT.CONCLUSION) {
+        // Conclusion overlay: scroll with left hand, back with right hand
+        if (leftHand) handleLeftConclusion(leftHand);
+        if (rightHand) handleRightHand(rightHand);
+    }
 }
 
 // ==========================================
@@ -135,6 +140,13 @@ function handleRightHand(landmarks) {
         const now = Date.now();
         if (now - lastBackTime < CONFIG.BACK_COOLDOWN) return '🖖 ĐANG CHỜ...';
         lastBackTime = now;
+
+        // Đóng Conclusion Overlay nếu đang mở
+        if (currentGestureContext === GESTURE_CONTEXT.CONCLUSION) {
+            closeConclusionOverlay();
+            currentGestureContext = GESTURE_CONTEXT.TIMELINE;
+            return '🖖 BACK: Conclusion → Timeline';
+        }
 
         if (currentGestureContext === GESTURE_CONTEXT.DETAIL) {
             exitDetailView();
@@ -174,7 +186,28 @@ function handleRightHand(landmarks) {
             selectCard(cardId);
             return `✌️ 2 NGÓN: CHỌN THẺ ${cardId}`;
         }
-        // Trong Timeline: chọn node
+        // Trong Timeline: kiểm tra click vào nút Kết luận hoặc chọn node
+        if (currentGestureContext === GESTURE_CONTEXT.TIMELINE) {
+            const now = Date.now();
+            if (now - lastBackTime < 800) return '✌️ ĐANG CHỜ...'; // Cooldown
+            lastBackTime = now;
+
+            // Kiểm tra cursor có hover trên nút Kết luận không
+            const conclusionBtn = document.getElementById('conclusion-btn');
+            if (conclusionBtn && conclusionBtn.style.display !== 'none') {
+                const rect = conclusionBtn.getBoundingClientRect();
+                if (cursorX >= rect.left && cursorX <= rect.right &&
+                    cursorY >= rect.top && cursorY <= rect.bottom) {
+                    openConclusionOverlay();
+                    currentGestureContext = GESTURE_CONTEXT.CONCLUSION;
+                    return '✌️ MỞ KẾT LUẬN';
+                }
+            }
+
+            // Không hover trên nút -> chọn node
+            return selectOrEnterNode();
+        }
+
         return selectOrEnterNode();
     }
 
@@ -203,6 +236,28 @@ function handleLeftDetail(landmarks) {
         }
         const dy = palm.y - prevPanPos.y;
         scrollVelocity = dy * 25;
+        prevPanPos = palm;
+        return;
+    }
+    prevPanPos = null;
+}
+
+// Handle left hand scroll in Conclusion Overlay
+function handleLeftConclusion(landmarks) {
+    if (isOpenHand(landmarks)) {
+        const palm = landmarks[9];
+        if (!prevPanPos) {
+            prevPanPos = palm;
+            return;
+        }
+        const dy = palm.y - prevPanPos.y;
+
+        // Scroll conclusion container
+        const container = document.getElementById('conclusion-container');
+        if (container) {
+            container.scrollTop += dy * 600;
+        }
+
         prevPanPos = palm;
         return;
     }

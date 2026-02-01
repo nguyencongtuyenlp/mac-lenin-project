@@ -1185,11 +1185,11 @@
            CONCLUSION BUTTON & OVERLAY
         ========================================== */
 
-        /* Conclusion Button - Semi-transparent, Bottom-Left */
+        /* Conclusion Button - Semi-transparent, Below Camera */
         #conclusion-btn {
             position: fixed;
-            bottom: 30px;
-            left: 30px;
+            top: 150px;
+            right: 20px;
             z-index: 500;
             padding: 12px 24px;
             font-size: 16px;

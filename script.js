@@ -1486,7 +1486,8 @@ const GESTURE_CONTEXT = {
     WELCOME: 'welcome',
     CAROUSEL: 'carousel',
     DETAIL: 'detail',
-    TIMELINE: 'timeline'
+    TIMELINE: 'timeline',
+    CONCLUSION: 'conclusion'
 };
 
 let currentGestureContext = null;
@@ -1825,6 +1826,9 @@ function selectCard(cardId) {
     // Hiện nút back
     document.getElementById('global-back-btn').style.display = 'block';
 
+    // Hiện nút Kết luận
+    showConclusionButton();
+
     // Cập nhật title từ dữ liệu cards
     const card = timelineData.cards.find(c => c.id === cardId);
     if (card) {
@@ -1876,6 +1880,10 @@ function exitTimelineView() {
 
     // Back button remains visible (for Carousel -> Welcome)
     document.getElementById('global-back-btn').style.display = 'block';
+
+    // Ẩn nút Kết luận
+    hideConclusionButton();
+
     currentGestureContext = GESTURE_CONTEXT.CAROUSEL;
 
 }
@@ -2202,6 +2210,9 @@ function resetToWelcome() {
     document.getElementById('header').style.display = 'none';
     document.getElementById('global-back-btn').style.display = 'none';
 
+    // Ẩn nút Kết luận
+    hideConclusionButton();
+
     const gesturePanel = document.getElementById('gesture-panel');
     if (gesturePanel) gesturePanel.style.display = 'none';
 
@@ -2274,3 +2285,51 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 1000);
 });
+
+// ==========================================
+// CONCLUSION BUTTON & OVERLAY
+// ==========================================
+
+// Mở overlay kết luận
+function openConclusionOverlay() {
+    const overlay = document.getElementById('conclusion-overlay');
+    const contentDiv = document.getElementById('conclusion-content');
+
+    // Lấy nội dung kết luận từ card hiện tại
+    if (currentCardId !== null) {
+        const card = timelineData.cards.find(c => c.id === currentCardId);
+        if (card && card.conclusion) {
+            contentDiv.innerHTML = card.conclusion;
+        } else {
+            contentDiv.innerHTML = '<p><em>Chưa có nội dung kết luận cho giai đoạn này. Vui lòng thêm thuộc tính "conclusion" vào card trong data.js</em></p>';
+        }
+    }
+
+    overlay.classList.add('show');
+    console.log('📝 Opened conclusion overlay');
+}
+
+// Đóng overlay kết luận
+function closeConclusionOverlay() {
+    const overlay = document.getElementById('conclusion-overlay');
+    overlay.classList.remove('show');
+
+    // Reset gesture context về Timeline nếu đang ở Conclusion
+    if (currentGestureContext === GESTURE_CONTEXT.CONCLUSION) {
+        currentGestureContext = GESTURE_CONTEXT.TIMELINE;
+    }
+
+    console.log('📝 Closed conclusion overlay');
+}
+
+// Hiển thị nút Kết luận khi vào timeline
+function showConclusionButton() {
+    const btn = document.getElementById('conclusion-btn');
+    if (btn) btn.style.display = 'block';
+}
+
+// Ẩn nút Kết luận khi thoát timeline
+function hideConclusionButton() {
+    const btn = document.getElementById('conclusion-btn');
+    if (btn) btn.style.display = 'none';
+}
