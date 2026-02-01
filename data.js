@@ -8,7 +8,23 @@ const CONFIG = {
     branchSpacing: 40,
     nodeRadius: 8,
     zoomMin: 0.3,
-    zoomMax: 3.0
+    zoomMax: 3.0,
+
+    // === PHYSICS ENGINE ===
+    ZOOM_SMOOTHING: 0.1,      // Độ mượt phóng to (0.05-0.2)
+    PAN_SMOOTHING: 0.12,      // Độ mượt kéo (0.08-0.15)
+    SCROLL_FRICTION: 0.96,    // Ma sát cuộn (0.9-0.98)
+    SCROLL_DEADZONE: 0.0015,  // Vùng chết lọc nhiễu
+    CURSOR_SMOOTHING: 0.15,   // LERP cho cursor (lọc rung)
+
+    // === GESTURE COOLDOWNS ===
+    SWIPE_COOLDOWN: 800,      // ms giữa các lần vuốt
+    BACK_COOLDOWN: 1000,      // ms giữa các lần back
+    SWIPE_THRESHOLD: 0.08,    // Ngưỡng vuốt (normalized)
+
+    // === ZOOM SENSITIVITY ===
+    ZOOM_IN_SPEED: 0.02,      // Tốc độ phóng to (thumb/pinch)
+    ZOOM_OUT_SPEED: 0.015     // Tốc độ thu nhỏ (fist)
 };
 
 // Prevent init3D from running multiple times

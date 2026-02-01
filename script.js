@@ -11,6 +11,21 @@ let panOffset = { x: 0, y: 0 };
 let selectedNode = null;
 let hoveredNode = null;
 
+// === PHYSICS ENGINE STATE ===
+let targetZoom = 1.0;
+let targetPan = { x: 0, y: 0 };
+let scrollVelocity = 0;
+let isHandActive = false;
+
+// Cursor with LERP smoothing
+let cursorTargetX = window.innerWidth / 2;
+let cursorTargetY = window.innerHeight / 2;
+
+// === GESTURE COOLDOWNS ===
+let lastSwipeTime = 0;
+let lastBackTime = 0;
+let lastZoomTime = 0;
+
 // Carousel state
 let currentCardIndex = 0; // Current active card in carousel (0-indexed)
 
@@ -585,8 +600,10 @@ function createCardTimeline(cardId) {
         return;
     }
 
-    // ⭐ RESET PAN/ZOOM ĐỂ ĐẢM BẢO VIEW ĐÚNG
+    // ⭐ RESET PAN/ZOOM ĐỂ ĐẢM BẢO VIEW ĐÚNG (sync both target AND current)
+    targetPan = { x: 0, y: 0 };
     panOffset = { x: 0, y: 0 };
+    targetZoom = 1.0;
     currentZoom = 1.0;
 
     // Xóa timeline cũ
@@ -626,16 +643,19 @@ function createCardTimeline(cardId) {
         console.log(`🌊 Card ${cardId} dùng waveAmplitude riêng: ${waveHeight}`);
     }
 
-    // 🔍 AUTO-ZOOM: Camera zoom out cho timelines rộng hơn
+    // 🔍 AUTO-ZOOM: Camera zoom out cho timelines rộng hơn (sync both values)
+    let autoZoom;
     if (nodeCount <= 3) {
-        currentZoom = 1.0;
+        autoZoom = 1.0;
     } else if (nodeCount <= 5) {
-        currentZoom = 0.85;
+        autoZoom = 0.85;
     } else if (nodeCount <= 7) {
-        currentZoom = 0.7;
+        autoZoom = 0.7;
     } else {
-        currentZoom = 0.55; // Zoom out nhiều cho 8+ nodes
+        autoZoom = 0.55; // Zoom out nhiều cho 8+ nodes
     }
+    targetZoom = autoZoom;
+    currentZoom = autoZoom;
 
     console.log(`📐 Dynamic params: width=${totalWidth}, spacing=${nodeSpacing.toFixed(1)}, wave=${waveHeight}, zoom=${currentZoom}`);
 
@@ -796,7 +816,7 @@ function createCardTimeline(cardId) {
         labelCanvas.width = 512;
         labelCanvas.height = 100;
         const ctx = labelCanvas.getContext('2d');
-// THỬ TẮT NỀN Ở ĐÂY
+        // THỬ TẮT NỀN Ở ĐÂY
         // Vẽ nền mờ
         ctx.fillStyle = 'rgba(104, 101, 92, 0.6)';
         ctx.roundRect(10, 10, 492, 80, 10);
@@ -926,12 +946,12 @@ document.addEventListener('wheel', (e) => {
     e.preventDefault();
 
     const zoomSpeed = 0.001;
-    let newZoom = currentZoom - e.deltaY * zoomSpeed;
+    let newZoom = targetZoom - e.deltaY * zoomSpeed;
 
     // Giới hạn Zoom (Clamping)
     newZoom = Math.max(MIN_ZOOM, Math.min(newZoom, MAX_ZOOM));
 
-    currentZoom = newZoom;
+    targetZoom = newZoom;
 }, { passive: false });
 // ==========================================
 let lastTime = 0;
@@ -1013,10 +1033,38 @@ function animate() {
         }
     });
 
-    // Apply zoom and pan with simple lerping
+    // === PHYSICS ENGINE: LERP Smoothing ===
+    // Zoom smoothing: currentZoom lerps toward targetZoom
+    currentZoom += (targetZoom - currentZoom) * CONFIG.ZOOM_SMOOTHING;
+
+    // Pan smoothing: panOffset lerps toward targetPan
+    panOffset.x += (targetPan.x - panOffset.x) * CONFIG.PAN_SMOOTHING;
+    panOffset.y += (targetPan.y - panOffset.y) * CONFIG.PAN_SMOOTHING;
+
+    // Apply zoom and pan to timeline group
     timelineGroup.scale.set(currentZoom, currentZoom, currentZoom);
-    timelineGroup.position.x += (panOffset.x - timelineGroup.position.x) * 0.1;
-    timelineGroup.position.y += (panOffset.y - timelineGroup.position.y) * 0.1;
+    timelineGroup.position.x = panOffset.x;
+    timelineGroup.position.y = panOffset.y;
+
+    // === SCROLL VELOCITY with Friction (for Detail View) ===
+    if (Math.abs(scrollVelocity) > CONFIG.SCROLL_DEADZONE) {
+        const container = document.getElementById('detail-container');
+        if (container && isInDetailView) {
+            container.scrollTop += scrollVelocity * 50;
+        }
+        scrollVelocity *= CONFIG.SCROLL_FRICTION;
+    }
+
+    // === CURSOR LERP Smoothing ===
+    if (cursorEnabled) {
+        cursorX += (cursorTargetX - cursorX) * CONFIG.CURSOR_SMOOTHING;
+        cursorY += (cursorTargetY - cursorY) * CONFIG.CURSOR_SMOOTHING;
+        const cursor = document.getElementById('virtual-cursor');
+        if (cursor) {
+            cursor.style.left = cursorX + 'px';
+            cursor.style.top = cursorY + 'px';
+        }
+    }
 
     renderer.render(scene, camera);
 }
@@ -1085,6 +1133,14 @@ function processHands(results) {
         });
     }
 
+    // === CRITICAL: Reset state when hands lost (Fixes jumping issue) ===
+    if (!leftHand && !rightHand) {
+        prevPanPos = null;
+        isHandActive = false;
+        return;
+    }
+    isHandActive = true;
+
     // =====================
     // CONTEXT AWARE HANDLING
     // =====================
@@ -1123,6 +1179,7 @@ function handleRightHand(landmarks) {
     const middle = landmarks[12];
     const ring = landmarks[16];
     const pinky = landmarks[20];
+    const thumb = landmarks[4];
 
     const fingers = {
         index: index.y < landmarks[6].y,
@@ -1131,25 +1188,53 @@ function handleRightHand(landmarks) {
         pinky: pinky.y < landmarks[18].y
     };
 
-    // 5. 3 NGÓN → Quay lại (ưu tiên cao nhất)
+    // Check thumb extended (distance from index base)
+    const thumbExtended = Math.hypot(thumb.x - landmarks[5].x, thumb.y - landmarks[5].y) > 0.1;
+
+    // Check if fist (all fingers closed)
+    const isFistGesture = !fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky;
+
+    // Check if thumb up only (thumb extended, others closed)
+    const isThumbUp = thumbExtended && !fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky;
+
+    // === 1. 🖖 3 NGÓN → Back theo context ===
     if (fingers.index && fingers.middle && fingers.ring && !fingers.pinky) {
-        if (isInDetailView) {
-            // Trong detail view → Quay về timeline
+        const now = Date.now();
+        if (now - lastBackTime < CONFIG.BACK_COOLDOWN) return '🖖 ĐANG CHỜ...';
+        lastBackTime = now;
+
+        // Back dựa theo context hiện tại
+        if (currentGestureContext === GESTURE_CONTEXT.DETAIL) {
             exitDetailView();
-            return '🖖 3 NGÓN: THOÁT CHI TIẾT';
-        } else if (currentActiveCard !== null) {
-            // Trong timeline view → Quay về carousel
+            return '🖖 BACK: Detail → Timeline';
+        } else if (currentGestureContext === GESTURE_CONTEXT.TIMELINE) {
             exitTimelineView();
-            return '🖖 3 NGÓN: QUAY VỀ CAROUSEL';
+            return '🖖 BACK: Timeline → Carousel';
+        } else if (currentGestureContext === GESTURE_CONTEXT.CAROUSEL) {
+            resetToWelcome();
+            return '🖖 BACK: Carousel → Welcome';
         }
-        return '🖖 3 NGÓN: QUAY LẠI';
+        return '🖖 3 NGÓN: KHÔNG CÓ ACTION';
     }
-    // 2. 2 NGÓN → Chọn/Vào node
+
+    // === 2. ✊ NẮM ĐẤM → Zoom Out (Timeline only) ===
+    if (isFistGesture && currentGestureContext === GESTURE_CONTEXT.TIMELINE) {
+        targetZoom = Math.max(CONFIG.zoomMin, targetZoom - CONFIG.ZOOM_OUT_SPEED);
+        return '✊ NẮM ĐẤM: ZOOM OUT';
+    }
+
+    // === 3. 👍 NGÓN CÁI → Zoom In (Timeline only) ===
+    if (isThumbUp && currentGestureContext === GESTURE_CONTEXT.TIMELINE) {
+        targetZoom = Math.min(CONFIG.zoomMax, targetZoom + CONFIG.ZOOM_IN_SPEED);
+        return '👍 NGÓN CÁI: ZOOM IN';
+    }
+
+    // === 4. ✌️ 2 NGÓN → Chọn/Vào node ===
     if (fingers.index && fingers.middle && !fingers.ring && !fingers.pinky) {
         return selectOrEnterNode();
     }
 
-    // 1. NGÓN TRỎ → Di chuyển cursor (luôn hoạt động)
+    // === 5. ☝️ NGÓN TRỎ → Di chuyển cursor ===
     if (fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky) {
         moveCursor(index);
         return '☝️ NGÓN TRỎ: DI CHUYỂN CURSOR';
@@ -1163,24 +1248,30 @@ function handleRightHand(landmarks) {
     return '';
 }
 function handleLeftDetail(landmarks) {
-    if (!isOpenHand(landmarks)) return;
+    // Bàn tay mở (5 ngón) để scroll
+    if (isOpenHand(landmarks)) {
+        const palm = landmarks[9];
+        if (!prevPanPos) {
+            prevPanPos = palm;
+            return;
+        }
 
-    const palm = landmarks[9];
-    if (!prevPanPos) {
+        const dy = palm.y - prevPanPos.y;
+        // Use scrollVelocity for momentum effect
+        scrollVelocity = dy * 25;  // Tăng sensitivity
         prevPanPos = palm;
         return;
     }
 
-    const dy = palm.y - prevPanPos.y;
-    const container = document.getElementById('detail-container');
-
-    container.scrollTop += dy * 1200;
-
-    prevPanPos = palm;
+    // Reset khi không phải open hand
+    prevPanPos = null;
 }
 
 function handleLeftTimeline(landmarks) {
-    if (!isOpenHand(landmarks)) return;
+    if (!isOpenHand(landmarks)) {
+        prevPanPos = null;  // Reset when not open hand
+        return;
+    }
 
     const palm = landmarks[9];
     if (!prevPanPos) {
@@ -1188,15 +1279,19 @@ function handleLeftTimeline(landmarks) {
         return;
     }
 
-    panOffset.x += (prevPanPos.x - palm.x) * 200;
-    panOffset.y += (palm.y - prevPanPos.y) * 150;
+    // Use targetPan for LERP smoothing
+    targetPan.x += (prevPanPos.x - palm.x) * 200;
+    targetPan.y += (palm.y - prevPanPos.y) * 150;
 
     prevPanPos = palm;
 }
 
 
 function handleLeftCarousel(landmarks) {
-    if (!isOpenHand(landmarks)) return;
+    if (!isOpenHand(landmarks)) {
+        prevPanPos = null;  // Reset when not open hand
+        return;
+    }
 
     const palm = landmarks[9];
     if (!prevPanPos) {
@@ -1206,8 +1301,23 @@ function handleLeftCarousel(landmarks) {
 
     const dx = palm.x - prevPanPos.x;
 
-    if (dx > 0.08) navigateCards(-1);
-    else if (dx < -0.08) navigateCards(1);
+    // Use CONFIG threshold and cooldown
+    const now = Date.now();
+    if (now - lastSwipeTime < CONFIG.SWIPE_COOLDOWN) {
+        prevPanPos = palm;
+        return;
+    }
+
+    if (Math.abs(dx) > CONFIG.SWIPE_THRESHOLD) {
+        const direction = dx > 0 ? -1 : 1;
+        navigateCards(direction);
+        lastSwipeTime = now;
+
+        // Visual shake feedback
+        const container = document.getElementById('node-cards-container');
+        container.classList.add('swipe-shake');
+        setTimeout(() => container.classList.remove('swipe-shake'), 400);
+    }
 
     prevPanPos = palm;
 }
@@ -1225,19 +1335,12 @@ function moveCursor(indexFingerLandmark) {
         cursor.style.display = 'block';
     }
 
-    // Chuyển đổi tọa độ (mirrored)
-    const x = (1 - indexFingerLandmark.x) * window.innerWidth;
-    const y = indexFingerLandmark.y * window.innerHeight;
-
-    cursor.style.left = x + 'px';
-    cursor.style.top = y + 'px';
-
-    // Lưu vị trí để dùng cho selection
-    cursorX = x;
-    cursorY = y;
+    // Chuyển đổi tọa độ (mirrored) - Set TARGET for LERP
+    cursorTargetX = (1 - indexFingerLandmark.x) * window.innerWidth;
+    cursorTargetY = indexFingerLandmark.y * window.innerHeight;
 
     // Kiểm tra hover node
-    checkNodeHover(x, y);
+    checkNodeHover(cursorX, cursorY);
     cursor.classList.toggle('active', !!hoveredNode);
 }
 
@@ -1248,6 +1351,11 @@ function selectOrEnterNode() {
     if (!cursorX || !cursorY) {
         return '✌️ 2 NGÓN: DI CHUYỂN CURSOR ĐẾN NODE';
     }
+
+    // Visual click feedback on cursor
+    const cursor = document.getElementById('virtual-cursor');
+    cursor.classList.add('clicking');
+    setTimeout(() => cursor.classList.remove('clicking'), 300);
 
     // Chuyển đổi vị trí cursor sang tọa độ 3D
     const rect = renderer.domElement.getBoundingClientRect();
@@ -1266,15 +1374,11 @@ function selectOrEnterNode() {
             return '✌️ 2 NGÓN: TRONG CHI TIẾT';
         } else {
             // Ngoài: vào detail view với animation
-            const fullNode = timelineData.nodes.find(n => n.id === node.id);
-            if (fullNode && fullNode.content) {
-                // Find mesh and animate
-                const nodeMesh = nodeMeshes.find(m => m.userData.id === fullNode.id);
-                animateNodeZoom(nodeMesh, () => {
-                    openDetailView(fullNode);
-                });
-                return `✌️ 2 NGÓN: MỞ "${fullNode.label}"`;
-            }
+            const nodeMesh = nodeMeshes.find(m => m.userData.id === node.id);
+            animateNodeZoom(nodeMesh, () => {
+                openDetailView(node);
+            });
+            return `✌️ 2 NGÓN: MỞ "${node.title || node.label}"`;
         }
     }
 
@@ -1313,6 +1417,7 @@ let controlMode = null; // 'gesture' or 'mouse'
 // GESTURE CONTEXT STATE
 // =====================
 const GESTURE_CONTEXT = {
+    WELCOME: 'welcome',
     CAROUSEL: 'carousel',
     DETAIL: 'detail',
     TIMELINE: 'timeline'
@@ -1433,6 +1538,11 @@ function startGestureMode() {
 
     // Hiện nút back ngay từ Carousel
     document.getElementById('global-back-btn').style.display = 'block';
+
+    // Enable cursor by default in gesture mode
+    cursorEnabled = true;
+    const cursor = document.getElementById('virtual-cursor');
+    if (cursor) cursor.style.display = 'block';
 
     initCarouselControls();
     updateCarouselScale();
@@ -1819,12 +1929,12 @@ document.addEventListener('mousemove', (e) => {
     // Update hover
     checkNodeHover(e.clientX, e.clientY);
 
-    // Drag to pan
+    // Drag to pan - UPDATE targetPan for LERP physics
     if (isMouseDragging) {
         const deltaX = (lastMousePos.x - e.clientX) * 0.5;
         const deltaY = (e.clientY - lastMousePos.y) * 0.5;
-        panOffset.x += deltaX;
-        panOffset.y += deltaY;
+        targetPan.x += deltaX;
+        targetPan.y += deltaY;
         lastMousePos = { x: e.clientX, y: e.clientY };
     }
 });
@@ -1871,13 +1981,13 @@ document.addEventListener('dblclick', (e) => {
     }
 });
 
-// Scroll - zoom in/out
+// Scroll - zoom in/out (UPDATE targetZoom for LERP)
 document.addEventListener('wheel', (e) => {
     if (isInDetailView) return;
 
     e.preventDefault();
-    const zoomDelta = e.deltaY > 0 ? -0.05 : 0.05;
-    currentZoom = Math.max(CONFIG.zoomMin, Math.min(CONFIG.zoomMax, currentZoom + zoomDelta));
+    const zoomDelta = e.deltaY > 0 ? -0.1 : 0.1;
+    targetZoom = Math.max(CONFIG.zoomMin, Math.min(CONFIG.zoomMax, targetZoom + zoomDelta));
 
 }, { passive: false });
 
@@ -1887,8 +1997,10 @@ document.addEventListener('contextmenu', (e) => {
     if (isInDetailView) {
         exitDetailView();
     } else {
-        // Reset pan and zoom
+        // Reset pan and zoom (both target AND current for immediate + smooth effect)
+        targetPan = { x: 0, y: 0 };
         panOffset = { x: 0, y: 0 };
+        targetZoom = 1.0;
         currentZoom = 1.0;
         selectedNode = null;
         document.getElementById('node-info').style.display = 'none';
@@ -1988,14 +2100,43 @@ function goBack() {
     }
 
     // Mặc định: về Welcome Screen
+    resetToWelcome();
+}
+
+// ==========================================
+// RESET VỀ WELCOME SCREEN
+// ==========================================
+function resetToWelcome() {
+    // Ẩn tất cả UI
     document.getElementById('node-cards-container').style.display = 'none';
     document.getElementById('canvas-container').style.display = 'none';
     document.getElementById('header').style.display = 'none';
     document.getElementById('global-back-btn').style.display = 'none';
+
+    const gesturePanel = document.getElementById('gesture-panel');
+    if (gesturePanel) gesturePanel.style.display = 'none';
+
+    // Hiện welcome
     document.getElementById('welcome-overlay').style.display = 'flex';
 
+    // Stop tracking và reset state
     stopMediaPipe();
+
+    // Reset physics state
+    targetZoom = 1.0;
+    currentZoom = 1.0;
+    targetPan = { x: 0, y: 0 };
+    panOffset = { x: 0, y: 0 };
+    scrollVelocity = 0;
+    prevPanPos = null;
+    isHandActive = false;
+
+    // Reset context
     currentGestureContext = GESTURE_CONTEXT.WELCOME;
+    currentActiveCard = null;
+    currentCardId = null;
+
+    console.log('🏠 Reset to Welcome Screen');
 }
 
 // ==========================================
