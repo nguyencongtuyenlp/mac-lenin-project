@@ -234,21 +234,32 @@ function handleLeftCarousel(landmarks) {
         prevPanPos = palm;
         return;
     }
+
     const dx = palm.x - prevPanPos.x;
     const now = Date.now();
-    if (now - lastSwipeTime < CONFIG.SWIPE_COOLDOWN) {
-        prevPanPos = palm;
+
+    // Giảm cooldown xuống 500ms để vuốt liên tục nhanh hơn
+    if (now - lastSwipeTime < 500) {
+        prevPanPos = palm; // Vẫn cập nhật vị trí
         return;
     }
-    if (Math.abs(dx) > CONFIG.SWIPE_THRESHOLD) {
+
+    // Giảm threshold xuống 0.08 để nhạy hơn (từ CONFIG.SWIPE_THRESHOLD)
+    if (Math.abs(dx) > 0.08) {
         const direction = dx > 0 ? -1 : 1;
         navigateCards(direction);
         lastSwipeTime = now;
+
+        // QUAN TRỌNG: Reset prevPanPos để cho phép vuốt tiếp
+        prevPanPos = null;
+
+        // Visual feedback
         const container = document.getElementById('node-cards-container');
         container.classList.add('swipe-shake');
-        setTimeout(() => container.classList.remove('swipe-shake'), 400);
+        setTimeout(() => container.classList.remove('swipe-shake'), 300);
+    } else {
+        prevPanPos = palm;
     }
-    prevPanPos = palm;
 }
 
 // ==========================================
